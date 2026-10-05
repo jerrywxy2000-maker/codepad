@@ -24,11 +24,24 @@ LAUNCH_AGENT_TEMPLATE="$SCRIPT_DIR/com.xiaoxi.vibepad.mac-helper.plist"
 LAUNCH_AGENT_LABEL="com.xiaoxi.vibepad.mac-helper"
 LAUNCH_AGENT_PATH="$HOME/Library/LaunchAgents/$LAUNCH_AGENT_LABEL.plist"
 APK="$ANDROID_PROJECT/app/build/outputs/apk/debug/app-debug.apk"
-HELPER_BINARY="$HELPER_PROJECT/.build/release/vibepad-mac-helper"
+# --arch 多架构构建的产物在 .build/apple/Products/Release/；单架构在 .build/release/
+HELPER_BINARY="$HELPER_PROJECT/.build/apple/Products/Release/vibepad-mac-helper"
+if [[ ! -f "$HELPER_BINARY" ]]; then
+  HELPER_BINARY="$HELPER_PROJECT/.build/release/vibepad-mac-helper"
+fi
 MODE="${1:-stage}"
+# --mac-only：跳过 Android APK 构建，只产出 Mac 端 Helper（本机没有 Android SDK 时用）
+MAC_ONLY=0
+if [[ "$MODE" == "--mac-only" ]]; then
+  MODE="stage"
+  MAC_ONLY=1
+elif [[ "$MODE" == "--install-only" ]]; then
+  MODE="--install"
+  MAC_ONLY=1
+fi
 
 if [[ "$MODE" != "stage" && "$MODE" != "--install" ]]; then
-  echo "Usage: SIGNING_IDENTITY='Apple Development: ...' $0 [stage|--install]" >&2
+  echo "Usage: SIGNING_IDENTITY='Apple Development: ...' $0 [stage|--install|--mac-only]" >&2
   exit 2
 fi
 
@@ -43,12 +56,13 @@ if ! security find-identity -v -p codesigning | grep -Fq "\"$SIGNING_IDENTITY\""
   exit 3
 fi
 
-export JAVA_HOME="${JAVA_HOME:-/opt/homebrew/opt/openjdk@17}"
-export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
-export PATH="$JAVA_HOME/bin:$PATH"
-
-(cd "$ANDROID_PROJECT" && ./gradlew :app:assembleDebug)
-(cd "$HELPER_PROJECT" && swift build -c release)
+if [[ "$MAC_ONLY" -eq 0 ]]; then
+  export JAVA_HOME="${JAVA_HOME:-/opt/homebrew/opt/openjdk@17}"
+  export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
+  export PATH="$JAVA_HOME/bin:$PATH"
+  (cd "$ANDROID_PROJECT" && ./gradlew :app:assembleDebug)
+fi
+(cd "$HELPER_PROJECT" && swift build -c release --arch arm64 --arch x86_64)
 (cd "$HELPER_PROJECT/Driver" && SIGNING_IDENTITY="$SIGNING_IDENTITY" ./build-driver.sh)
 
 mkdir -p "$DIST_DIR"
@@ -83,12 +97,16 @@ if [[ "$requirement" != *'identifier "com.xiaoxi.vibepad.helper"'* ||
   exit 5
 fi
 
-cp -p "$APK" "$DIST_DIR/VibePad-debug.apk"
-shasum -a 256 "$DIST_DIR/VibePad-debug.apk" \
-  "$STAGED_HELPER/Contents/MacOS/vibepad-mac-helper"
+if [[ "$MAC_ONLY" -eq 0 ]]; then
+  cp -p "$APK" "$DIST_DIR/VibePad-debug.apk"
+  shasum -a 256 "$DIST_DIR/VibePad-debug.apk" \
+    "$STAGED_HELPER/Contents/MacOS/vibepad-mac-helper"
+else
+  shasum -a 256 "$STAGED_HELPER/Contents/MacOS/vibepad-mac-helper"
+fi
 
 if [[ "$MODE" == "--install" ]]; then
-  if ! adb devices | awk 'NR > 1 && $2 == "device" { found=1 } END { exit !found }'; then
+  if [[ "$MAC_ONLY" -eq 0 ]] && ! adb devices | awk 'NR > 1 && $2 == "device" { found=1 } END { exit !found }'; then
     echo "No authorized Android device is connected; nothing was installed." >&2
     exit 6
   fi
@@ -99,9 +117,12 @@ if [[ "$MODE" == "--install" ]]; then
   if [[ -d "$INSTALLED_HELPER" ]]; then
     ditto "$INSTALLED_HELPER" "$backup_dir/VibePad Helper.app"
   fi
-  installed_apk="$(adb shell pm path com.xiaoxi.vibepad 2>/dev/null | head -n 1 | tr -d '\r' | sed 's/^package://' || true)"
-  if [[ -n "$installed_apk" ]]; then
-    adb pull "$installed_apk" "$backup_dir/app-before-install.apk"
+  installed_apk=""
+  if [[ "$MAC_ONLY" -eq 0 ]]; then
+    installed_apk="$(adb shell pm path com.xiaoxi.vibepad 2>/dev/null | head -n 1 | tr -d '\r' | sed 's/^package://' || true)"
+    if [[ -n "$installed_apk" ]]; then
+      adb pull "$installed_apk" "$backup_dir/app-before-install.apk"
+    fi
   fi
 
   mkdir -p "$INSTALL_DIR"
@@ -117,7 +138,9 @@ if [[ "$MODE" == "--install" ]]; then
       "$LAUNCH_AGENT_TEMPLATE" > "$LAUNCH_AGENT_PATH"
   launchctl bootstrap "gui/$(id -u)" "$LAUNCH_AGENT_PATH"
 
-  adb install -r "$APK"
+  if [[ "$MAC_ONLY" -eq 0 ]]; then
+    adb install -r "$APK"
+  fi
 
   echo ""
   echo "安装完成。首次安装或签名身份变化后还需手动完成："
