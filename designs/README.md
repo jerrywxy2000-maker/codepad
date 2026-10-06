@@ -1,16 +1,19 @@
-# VibePad 皮肤（三套）
+# VibePad 皮肤与设计源码
 
-VibePad 安卓平板端的三套 UI 皮肤。三套共用同一套连接协议、手势与快捷键逻辑，
-只改变**视觉变量与布局**，不各自发明交互。正式 App 以"皮肤切换"的形式实现三套，
-不是三个独立 App。
+VibePad 安卓平板端的布局与配色参考源。布局（`classic` / `graphite` / `titanium`）
+与配色（`classic` / `graphite` / `titanium` / `midnight` / `forest` / `violet` / `auto`）
+是两个独立维度，任意组合。所有组合共用同一套连接协议、手势与快捷键逻辑，
+只改变**视觉变量与布局**，不各自发明交互。
 
-| 皮肤 | 目录 | 来源 | 特点 |
+正式 App 在设置里提供布局单选组 + 配色下拉框，不是三个独立 App。
+
+| 布局组合 | 目录 | 来源 | 特点 |
 |---|---|---|---|
 | 01 经典黑 | `skins/01-classic-dark/` | 2026-07-23 Stitch 原型，现行 App 已实现版本 | 纯黑背景、左控右触（原型中的五组额度栏已从 App 移除，顶栏改为 Touch Bar 画面） |
 | 02 深空专业 Graphite Pro | `skins/02-graphite-pro/` | 2026-09-10 Orbit 交付包 | 深空灰分层、左触控右快捷键、底部 App Dock |
 | 05 双手操控 Titanium Duo | `skins/05-titanium-duo/` | 2026-09-10 Orbit 交付包 | 暖钛浅色、中央触控、左右拇指分工 |
 
-## 每套皮肤的内容
+## 布局与配色目录结构
 
 - `index.html`：可交互高保真原型，浏览器直接打开（02/05 已内嵌全部样式脚本，
   断网可用；01 依赖 CDN 的 Tailwind 与 Google Fonts，需联网）
@@ -26,7 +29,7 @@ HANDOFF.md、QA.md）。改 02/05 时优先编辑 `orbit-source/src/selected-fra
 ## 优化时必须遵守的边界
 
 1. **编号固定**：01 / 02 / 05 是正式编号，不要重命名，不要把两套布局的元素混成第三套。
-2. **协议不变**：皮肤只改视觉与布局，不改网络协议、配对流程、手势语义、键位功能。
+2. **协议不变**：配色与布局只改视觉与排布，不改网络协议、配对流程、手势语义、键位功能。
 3. **演示数据非真值**：原型里的设备名、延迟、电量、转写文字都是演示值；
    接入规则见 `orbit-source/design/HANDOFF.md` 第 6 节（真实数据接入）。
 4. **主题与布局分离**：02 与 05 的差异是信息架构 + 色板，不能只换色表互相推导。
@@ -35,8 +38,8 @@ HANDOFF.md、QA.md）。改 02/05 时优先编辑 `orbit-source/src/selected-fra
 
 ## 现行 App 实现对应
 
-当前 Android App（`android/`，Kotlin 原生 View）已经实现三套皮肤，可在设置里切换，
-也可以在 Mac 菜单栏「VibePad 设置…」里切换：
+当前 Android App（`android/`，Kotlin 原生 View）已经实现三套默认组合，可在设置里切换
+布局和配色（7 种可选），也可以在 Mac 菜单栏「VibePad 设置…」里切换：
 
 | 设计 | App 内名称 | 实现 |
 | --- | --- | --- |

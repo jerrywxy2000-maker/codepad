@@ -8,7 +8,9 @@
 
 ## 界面预览（真机截图）
 
-三套皮肤，在平板设置弹层或 Mac 菜单栏「VibePad 设置…」里随时切换：
+布局（左/中/右三套排布）与配色（经典黑 / 深空灰 / 暖钛浅 / 深夜蓝 / 墨绿 / 暗紫 / 跟随 Mac）
+是两个独立维度，可在平板设置弹层或 Mac 菜单栏「VibePad 设置…」里自由组合。
+下方截图展示三套默认组合（布局 id = 配色 id）：
 
 | 经典（classic） | 深空专业（graphite） | 双手操控（titanium） |
 | :---: | :---: | :---: |
@@ -79,7 +81,7 @@ Android SDK），按提示装好再跑一次即可。
 - **按住说话**：按住右下角的麦克风按钮说话，松开后语音直通 Mac 上的
   Typeless 转写（首次使用在 Mac 菜单栏「VibePad 设置… → 麦克风驱动」
   点一次「安装驱动」即可，不装也不影响其他功能）。
-- **换皮肤 / 改灵敏度 / 设置常用 App**：平板点齿轮，或在 Mac 菜单栏
+- **切换布局 / 配色 / 改灵敏度 / 设置常用 App**：平板点齿轮，或在 Mac 菜单栏
   「VibePad 设置…」里改，两端自动同步。
 
 ### 常见问题
@@ -99,7 +101,8 @@ Android SDK），按提示装好再跑一次即可。
 android/     安卓平板 App（Kotlin，包名 com.xiaoxi.vibepad）
 mac-helper/  Mac 菜单栏 Helper（Swift，Bundle ID com.xiaoxi.vibepad.helper）与
              自研 HAL 音频驱动（Driver/，AudioServerPlugIn 回环声卡）
-designs/     平板端三套 UI 皮肤（01 经典黑 / 02 深空专业 / 05 双手操控）与设计源码
+designs/     平板端布局与配色系统的设计参考（01 经典黑 / 02 深空专业 / 05 双手操控）及设计源码；
+              配色已解耦，可新增深夜蓝/墨绿/暗紫等主题而不改布局
 scripts/     发布脚本与 LaunchAgent 模板
 docs/assets/ README 用到的图标与真机截图
 dist/        发布产物（本地产出，不进 git）

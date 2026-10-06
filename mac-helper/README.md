@@ -72,8 +72,9 @@ HID Keyboard/Keypad usage；helper 负责将其映射为 macOS virtual keycode�
 `0x60 CONFIG_REQUEST` / `0x61 CONFIG` / `0x62 CONFIG_UPDATE` 三个帧与平板双向同步，
 `revision` 大的一方胜出。字段定义见 `PadConfigStore.swift` 与平板端的 `PadConfig.kt`。
 
-心跳回执 `0x21 PONG` 的健康 JSON 增加 `frontmostApp`（当前前台 App 的 bundle id），
-平板用它高亮常用 App。
+心跳回执 `0x21 PONG` 的健康 JSON 增加 `frontmostApp`（当前前台 App 的 bundle id）与
+`appearance`（`"dark"` / `"light"`，读自 macOS `AppleInterfaceStyle` UserDefaults），
+分别用于平板高亮常用 App 与「跟随 Mac」配色实时切换。
 
 > 上面的 “Wire protocol v1” 一节是历史记录：当前实际协议为 v2（HMAC 配对与鉴权、
 > Touch Bar 画面、音频、配置同步），以源码为准。
@@ -101,7 +102,7 @@ HID Keyboard/Keypad usage；helper 负责将其映射为 macOS virtual keycode�
 | `0x14` | 平板→Mac | RELEASE_ALL | 空 |
 | `0x15` | 平板→Mac | GESTURE | `id:u8`：1 Mission Control、2 App Exposé、3/4 上/下一桌面、5 显示桌面、6 Spotlight、7/8 放大/缩小、9 查询 |
 | `0x20` | 平板→Mac | PING | 任意（平板发送 8 字节时间戳） |
-| `0x21` | Mac→平板 | PONG | JSON 健康状态：`accessibilityTrusted`、`helperVersion`、`protocolVersion`、`lastInputAgeMs`、`mouseButtons`、`modifiers`；sequence 与 PING 相同 |
+| `0x21` | Mac→平板 | PONG | JSON 健康状态：`accessibilityTrusted`、`helperVersion`、`protocolVersion`、`lastInputAgeMs`、`mouseButtons`、`modifiers`、`frontmostApp`（可选）、`appearance`（`"dark"`/`"light"`）；sequence 与 PING 相同 |
 | `0x40` | 平板→Mac | APPS_REQUEST | 空 |
 | `0x41`/`0x42`/`0x43` | Mac→平板 | APPS_BEGIN / APP_ITEM / APPS_END | APP_ITEM 为 JSON：`name`、`bundleId`、可选 `icon`（48px PNG base64） |
 | `0x44` | 平板→Mac | LAUNCH_APP | UTF-8 bundle ID，仅允许 Helper 已枚举的 App |
