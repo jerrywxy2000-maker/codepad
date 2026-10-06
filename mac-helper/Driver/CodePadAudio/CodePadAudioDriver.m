@@ -1,18 +1,18 @@
 //==================================================================================================
 //
-//  VibePadAudioDriver.m
+//  CodePadAudioDriver.m
 //
-//  VibePadAudio — a virtual loopback microphone implemented as a CoreAudio AudioServerPlugIn
+//  CodePadAudio — a virtual loopback microphone implemented as a CoreAudio AudioServerPlugIn
 //  (HAL plug-in, ".driver" bundle loaded by coreaudiod).
 //
-//  Original work written from scratch for the VibePad project (MIT license). The architecture
+//  Original work written from scratch for the CodePad project (MIT license). The architecture
 //  (object tree, lock-free ring buffer, host-clock time stamps) follows the publicly documented
 //  AudioServerPlugIn model; no third-party driver source was used.
 //
 //  Object tree:
 //      PlugIn (kAudioObjectPlugInObject)
-//       └── Device "VibePad Microphone"  (UID com.xiaoxi.vibepad.audio.device)
-//            ├── Stream (output) — receives PCM written by the VibePad helper app
+//       └── Device "CodePad Microphone"  (UID com.xiaoxi.codepad.audio.device)
+//            ├── Stream (output) — receives PCM written by the CodePad helper app
 //            └── Stream (input)  — exposes the same PCM to any app as a microphone
 //
 //  The loopback is a dumb single-writer/single-reader ring buffer living inside the plug-in.
@@ -49,14 +49,14 @@ enum
 };
 
 // Identity.
-#define kVPDBundleID            CFSTR("com.xiaoxi.vibepad.audio.driver")
-#define kVPDPlugInName          CFSTR("VibePadAudio")
+#define kVPDBundleID            CFSTR("com.xiaoxi.codepad.audio.driver")
+#define kVPDPlugInName          CFSTR("CodePadAudio")
 #define kVPDManufacturerName    CFSTR("xiaoxi668v")
-#define kVPDDeviceName          CFSTR("VibePad Microphone")
-#define kVPDDeviceUID           CFSTR("com.xiaoxi.vibepad.audio.device")
-#define kVPDDeviceModelUID      CFSTR("com.xiaoxi.vibepad.audio.model")
-#define kVPDOutputStreamName    CFSTR("VibePad Microphone Output")
-#define kVPDInputStreamName     CFSTR("VibePad Microphone Input")
+#define kVPDDeviceName          CFSTR("CodePad Microphone")
+#define kVPDDeviceUID           CFSTR("com.xiaoxi.codepad.audio.device")
+#define kVPDDeviceModelUID      CFSTR("com.xiaoxi.codepad.audio.model")
+#define kVPDOutputStreamName    CFSTR("CodePad Microphone Output")
+#define kVPDInputStreamName     CFSTR("CodePad Microphone Input")
 
 // Format: 32-bit float, stereo, interleaved. Sample rate is switchable between 44.1k and 48k.
 enum
@@ -1515,7 +1515,7 @@ static OSStatus VPD_StopIO(AudioServerPlugInDriverRef inDriver, AudioObjectID in
     {
         VPD_NotifyRunningChanged();
         os_log(OS_LOG_DEFAULT,
-               "VibePadAudio: IO stopped; ring written=%llu read=%llu futureZeros=%llu staleZeros=%llu writeCycles=%llu zeroWriteCycles=%llu resyncs=%llu",
+               "CodePadAudio: IO stopped; ring written=%llu read=%llu futureZeros=%llu staleZeros=%llu writeCycles=%llu zeroWriteCycles=%llu resyncs=%llu",
                atomic_load_explicit(&gVPD.ringBytesWritten, memory_order_relaxed),
                atomic_load_explicit(&gVPD.ringBytesRead, memory_order_relaxed),
                atomic_load_explicit(&gVPD.ringReadFutureFrames, memory_order_relaxed),
@@ -1536,7 +1536,7 @@ static OSStatus VPD_StopIO(AudioServerPlugInDriverRef inDriver, AudioObjectID in
                 z[j] = gVPD.writeTraceZero[slot];
             }
             os_log(OS_LOG_DEFAULT,
-                   "VibePadAudio: wt %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u",
+                   "CodePadAudio: wt %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u",
                    s[0], f[0], z[0], s[1], f[1], z[1], s[2], f[2], z[2], s[3], f[3], z[3],
                    s[4], f[4], z[4], s[5], f[5], z[5], s[6], f[6], z[6], s[7], f[7], z[7]);
         }
@@ -1553,7 +1553,7 @@ static OSStatus VPD_StopIO(AudioServerPlugInDriverRef inDriver, AudioObjectID in
                 w[j] = gVPD.readTraceWanted[slot];
             }
             os_log(OS_LOG_DEFAULT,
-                   "VibePadAudio: rt %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u",
+                   "CodePadAudio: rt %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u %u,%u,%u",
                    s[0], f[0], w[0], s[1], f[1], w[1], s[2], f[2], w[2], s[3], f[3], w[3],
                    s[4], f[4], w[4], s[5], f[5], w[5], s[6], f[6], w[6], s[7], f[7], w[7]);
         }
@@ -1563,7 +1563,7 @@ static OSStatus VPD_StopIO(AudioServerPlugInDriverRef inDriver, AudioObjectID in
         {
             UInt32 slot = (holes - hcount + j) % 16;
             os_log(OS_LOG_DEFAULT,
-                   "VibePadAudio: hole raw=%lld wanted=%lld written=%lld anchor=%lld+%lld",
+                   "CodePadAudio: hole raw=%lld wanted=%lld written=%lld anchor=%lld+%lld",
                    gVPD.holeRawTime[slot], gVPD.holeFirstWanted[slot],
                    gVPD.holeWrittenFrames[slot], gVPD.holeAnchorTime[slot],
                    gVPD.holeAnchorFrame[slot]);
@@ -1722,8 +1722,8 @@ static VPDCOMObject gVPDObject = { &gVPDInterface };
 // Required export: coreaudiod resolves this symbol to reach the driver object.
 AudioServerPlugInDriverRef gAudioServerPlugInDriverRef = &gVPDObject.interface;
 
-extern void* VibePadAudioDriverFactory(CFAllocatorRef allocator, CFUUIDRef typeUUID);
-void* VibePadAudioDriverFactory(CFAllocatorRef allocator, CFUUIDRef typeUUID)
+extern void* CodePadAudioDriverFactory(CFAllocatorRef allocator, CFUUIDRef typeUUID);
+void* CodePadAudioDriverFactory(CFAllocatorRef allocator, CFUUIDRef typeUUID)
 {
     return VPD_Factory(allocator, typeUUID);
 }

@@ -1,4 +1,4 @@
-package com.xiaoxi.vibepad.ui
+package com.xiaoxi.codepad.ui
 
 /**
  * 布局与配色是两个独立维度，可以自由组合：
@@ -124,7 +124,7 @@ data class SkinPalette(
     val light: Boolean,
 ) {
     companion object {
-        /** 01 经典黑：0.4.1 已上线配色，逐值对应旧的 VibePadView 常量。 */
+        /** 01 经典黑：0.4.1 已上线配色，逐值对应旧的 CodePadView 常量。 */
         val CLASSIC = SkinPalette(
             background = 0xFF000000.toInt(),
             panel = 0xFF2A2A2A.toInt(),

@@ -1,4 +1,4 @@
-package com.xiaoxi.vibepad.system
+package com.xiaoxi.codepad.system
 
 import android.app.Activity
 import android.os.Handler
@@ -7,7 +7,7 @@ import android.view.View
 import android.view.WindowManager
 
 /**
- * Owns VibePad's immersive full-screen presentation: hides the system bars, keeps the
+ * Owns CodePad's immersive full-screen presentation: hides the system bars, keeps the
  * screen on, and re-hides the bars whenever the system brings them back (for example
  * after a swipe from the edge or a dialog). It never asks for Device Owner or lock-task
  * privileges; leaving the app is done through the in-app Exit action.

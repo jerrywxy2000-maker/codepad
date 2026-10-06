@@ -698,7 +698,7 @@ private final class ClientSession {
                 format: packet.payload[9],
                 framesPerPacket: uint16(packet.payload, at: 10)
             )
-            if !accepted { print("Rejected VibePad audio START from \(connection.endpoint)") }
+            if !accepted { print("Rejected CodePad audio START from \(connection.endpoint)") }
         case .audioData where packet.payload.count >= 18:
             let sampleCount = uint16(packet.payload, at: 16)
             guard packet.payload.count == 18 + Int(sampleCount) * 2 else { break }
@@ -829,7 +829,7 @@ private final class ClientSession {
                 deviceName: pairingStore.deviceName(for: clientID),
                 endpoint: endpointHost(connection.endpoint)
             )
-            print("VibePad paired client authenticated: \(connection.endpoint)")
+            print("CodePad paired client authenticated: \(connection.endpoint)")
 
         case .pairRequest:
             handlePairRequest(packet)
@@ -902,7 +902,7 @@ private final class ClientSession {
                     endpoint: self.endpointHost(self.connection.endpoint)
                 )
                 self.pairingGate.close()
-                print("VibePad paired: \(deviceName) \(clientID.hexString)")
+                print("CodePad paired: \(deviceName) \(clientID.hexString)")
             }
         }
     }
@@ -932,14 +932,14 @@ private final class ClientSession {
         touchBarSubscribed = false
         touchBar.stop()
         audioSink.stop(owner: sessionID)
-        if authenticated { injector.releaseAll(); print("VibePad disconnected") }
+        if authenticated { injector.releaseAll(); print("CodePad disconnected") }
         connection.cancel()
         onStop()
     }
 }
 
-private final class VibePadServer {
-    private let queue = DispatchQueue(label: "com.xiaoxi.vibepad.mac-helper", qos: .userInteractive)
+private final class CodePadServer {
+    private let queue = DispatchQueue(label: "com.xiaoxi.codepad.mac-helper", qos: .userInteractive)
     private lazy var injector = InputInjector(queue: queue)
     private let appCatalog = AppCatalog()
     private let pairingGate: PairingGate
@@ -989,9 +989,9 @@ private final class VibePadServer {
         parameters.allowLocalEndpointReuse = true
         let listener = try NWListener(using: parameters, on: NWEndpoint.Port(rawValue: Wire.port)!)
         // A distinct v2 service name also invalidates stale mDNS caches left by the legacy helper.
-        listener.service = NWListener.Service(name: "VibePad Mac Secure", type: "_vibepad._tcp")
+        listener.service = NWListener.Service(name: "CodePad Mac Secure", type: "_codepad._tcp")
         listener.stateUpdateHandler = { state in
-            if case .ready = state { print("Listening on TCP \(Wire.port) (Bonjour _vibepad._tcp.)") }
+            if case .ready = state { print("Listening on TCP \(Wire.port) (Bonjour _codepad._tcp.)") }
             if case .failed(let error) = state { fputs("Listener failed: \(error)\n", stderr); exit(2) }
         }
         listener.newConnectionHandler = { [weak self] connection in
@@ -1026,9 +1026,9 @@ private final class VibePadServer {
 @MainActor
 private func secureMain() {
     let trusted = AXIsProcessTrusted()
-    print("VibePad Mac Helper v\(HelperInfo.version) · VibePad aggregate microphone streaming")
+    print("CodePad Mac Helper v\(HelperInfo.version) · CodePad aggregate microphone streaming")
     if !trusted {
-        print("需要辅助功能权限：系统设置 > 隐私与安全性 > 辅助功能，启用 VibePad Helper 后重启本程序。")
+        print("需要辅助功能权限：系统设置 > 隐私与安全性 > 辅助功能，启用 CodePad Helper 后重启本程序。")
     }
     let pairingGate = PairingGate()
     let pairingStore = PairingStore()
@@ -1038,7 +1038,7 @@ private func secureMain() {
     application.finishLaunching()
     _ = AggregateMicrophone.ensureAvailable()
     FrontmostAppTracker.shared.start()
-    let server = VibePadServer(
+    let server = CodePadServer(
         pairingGate: pairingGate,
         pairingStore: pairingStore,
         configStore: configStore

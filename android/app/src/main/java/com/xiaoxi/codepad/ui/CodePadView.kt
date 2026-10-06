@@ -1,4 +1,4 @@
-package com.xiaoxi.vibepad.ui
+package com.xiaoxi.codepad.ui
 
 import android.app.AlertDialog
 import android.content.Context
@@ -25,15 +25,15 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.Spinner
 import android.widget.TextView
-import com.xiaoxi.vibepad.R
-import com.xiaoxi.vibepad.input.HelperHealth
-import com.xiaoxi.vibepad.input.HidKeys
-import com.xiaoxi.vibepad.input.HidModifiers
-import com.xiaoxi.vibepad.input.InputSink
-import com.xiaoxi.vibepad.input.MicrophoneStreamer
-import com.xiaoxi.vibepad.input.RemoteApp
-import com.xiaoxi.vibepad.input.TouchBarFrame
-import com.xiaoxi.vibepad.input.WifiInputSink
+import com.xiaoxi.codepad.R
+import com.xiaoxi.codepad.input.HelperHealth
+import com.xiaoxi.codepad.input.HidKeys
+import com.xiaoxi.codepad.input.HidModifiers
+import com.xiaoxi.codepad.input.InputSink
+import com.xiaoxi.codepad.input.MicrophoneStreamer
+import com.xiaoxi.codepad.input.RemoteApp
+import com.xiaoxi.codepad.input.TouchBarFrame
+import com.xiaoxi.codepad.input.WifiInputSink
 import java.util.Locale
 
 /**
@@ -47,7 +47,7 @@ import java.util.Locale
  *
  * 手势语义、键位功能、Typeless 按住说话与发送行为在所有皮肤里完全一致。
  */
-class VibePadView(
+class CodePadView(
     context: Context,
     private val sinkProvider: () -> InputSink,
     private val touchBarSinkProvider: () -> WifiInputSink? = { null },
@@ -523,7 +523,7 @@ class VibePadView(
             sinkProvider().requestApps()
             AlertDialog.Builder(context)
                 .setTitle("正在读取 Mac App")
-                .setMessage("已向 VibePad Helper 请求受控 App 列表，请稍后再点“自定义”。\n也可以直接在 Mac 菜单栏的 VibePad 设置里选。")
+                .setMessage("已向 CodePad Helper 请求受控 App 列表，请稍后再点“自定义”。\n也可以直接在 Mac 菜单栏的 CodePad 设置里选。")
                 .setPositiveButton("知道了", null)
                 .show()
             return
@@ -845,7 +845,7 @@ class VibePadView(
         orientation = HORIZONTAL
         gravity = Gravity.CENTER
         val icon = ImageView(context).apply {
-            setImageResource(R.drawable.ic_microphone_vibepad)
+            setImageResource(R.drawable.ic_microphone_codepad)
             setColorFilter(palette.onAccent)
         }
         addView(icon, LayoutParams(dp(24), dp(24)).apply { marginEnd = dp(8) })

@@ -8,7 +8,7 @@ enum HelperInfo {
 }
 
 enum PairingCrypto {
-    static let protocolLabel = Data("VibePad pairing v2".utf8)
+    static let protocolLabel = Data("CodePad pairing v2".utf8)
 
     static func randomBytes(count: Int) -> Data {
         var bytes = [UInt8](repeating: 0, count: count)
@@ -36,7 +36,7 @@ enum PairingCrypto {
     }
 
     static func verificationCode(secret: Data, transcript: Data) -> String {
-        let mac = hmac(secret: secret, data: Data("VibePad SAS".utf8) + transcript)
+        let mac = hmac(secret: secret, data: Data("CodePad SAS".utf8) + transcript)
         let number = mac.prefix(4).reduce(UInt32(0)) { ($0 << 8) | UInt32($1) } % 1_000_000
         return String(format: "%06u", number)
     }
@@ -55,7 +55,7 @@ enum PairingCrypto {
 }
 
 final class PairingStore {
-    private let service = "com.xiaoxi.vibepad.pairing.v2"
+    private let service = "com.xiaoxi.codepad.pairing.v2"
 
     func secret(for clientID: Data) -> Data? {
         let query: [String: Any] = [
@@ -79,7 +79,7 @@ final class PairingStore {
         ]
         let attributes: [String: Any] = [
             kSecValueData as String: secret,
-            kSecAttrLabel as String: "VibePad · \(deviceName)",
+            kSecAttrLabel as String: "CodePad · \(deviceName)",
             kSecAttrDescription as String: deviceName,
             kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
         ]
@@ -166,14 +166,14 @@ final class MenuBarController: NSObject {
     private let inputItem = NSMenuItem(title: "最近输入：暂无", action: nil, keyEquivalent: "")
     private let heldItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
     private let versionItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-    private let settingsItem = NSMenuItem(title: "VibePad 设置…", action: #selector(openSettingsWindow), keyEquivalent: ",")
+    private let settingsItem = NSMenuItem(title: "CodePad 设置…", action: #selector(openSettingsWindow), keyEquivalent: ",")
     private let pairingItem = NSMenuItem(title: "允许配对新平板（60 秒）", action: #selector(openPairing), keyEquivalent: "")
     private let countItem = NSMenuItem(title: "已配对设备：0", action: nil, keyEquivalent: "")
     private let pendingDeviceItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
     private let allowItem = NSMenuItem(title: "✓ 验证码一致，允许", action: #selector(allowPendingPairing), keyEquivalent: "")
     private let rejectItem = NSMenuItem(title: "拒绝本次配对", action: #selector(rejectPendingPairing), keyEquivalent: "")
     private let clearItem = NSMenuItem(title: "清除所有配对", action: #selector(clearPairings), keyEquivalent: "")
-    private let quitItem = NSMenuItem(title: "退出 VibePad Helper", action: #selector(quitHelper), keyEquivalent: "q")
+    private let quitItem = NSMenuItem(title: "退出 CodePad Helper", action: #selector(quitHelper), keyEquivalent: "q")
     private lazy var connectedIcon = Self.makeIcon(connected: true, pairingOpen: false)
     private lazy var disconnectedIcon = Self.makeIcon(connected: false, pairingOpen: false)
     private lazy var pairingIcon = Self.makeIcon(connected: false, pairingOpen: true)
@@ -194,7 +194,7 @@ final class MenuBarController: NSObject {
         Self.shared = self
         item.button?.image = disconnectedIcon
         item.button?.imagePosition = .imageOnly
-        item.button?.toolTip = "VibePad Helper"
+        item.button?.toolTip = "CodePad Helper"
         settingsItem.target = self
         settingsItem.isHidden = openSettings == nil
         pairingItem.target = self
@@ -262,7 +262,7 @@ final class MenuBarController: NSObject {
         resolvePending(approved: false)
         let launchctl = Process()
         launchctl.executableURL = URL(fileURLWithPath: "/bin/launchctl")
-        launchctl.arguments = ["bootout", "gui/\(getuid())/com.xiaoxi.vibepad.mac-helper"]
+        launchctl.arguments = ["bootout", "gui/\(getuid())/com.xiaoxi.codepad.mac-helper"]
         try? launchctl.run()
         // When launched outside launchd, bootout has nothing to stop; terminate normally.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -317,14 +317,14 @@ final class MenuBarController: NSObject {
         } else {
             heldItem.isHidden = true
         }
-        versionItem.title = "VibePad Helper \(HelperInfo.version) · 协议 v2"
+        versionItem.title = "CodePad Helper \(HelperInfo.version) · 协议 v2"
 
         countItem.title = "已配对设备：\(store.pairedDeviceCount())"
         let remaining = gate.secondsRemaining
         if let pendingCode {
             item.button?.image = nil
             item.button?.title = "验证码 \(pendingCode.chunkedCode)"
-            item.button?.toolTip = "VibePad 验证码：\(pendingCode)"
+            item.button?.toolTip = "CodePad 验证码：\(pendingCode)"
             pairingItem.isHidden = true
             pendingDeviceItem.isHidden = false
             allowItem.isHidden = false
@@ -334,7 +334,7 @@ final class MenuBarController: NSObject {
                 ? connectedIcon
                 : (remaining > 0 ? pairingIcon : disconnectedIcon)
             item.button?.title = ""
-            item.button?.toolTip = snapshot.connected ? "VibePad：已连接" : "VibePad Helper"
+            item.button?.toolTip = snapshot.connected ? "CodePad：已连接" : "CodePad Helper"
             pairingItem.isHidden = false
             pendingDeviceItem.isHidden = true
             allowItem.isHidden = true

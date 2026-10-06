@@ -1,13 +1,13 @@
 #!/bin/bash
-# uninstall-driver.sh — remove VibePadAudio.driver from the system HAL plug-in directory.
+# uninstall-driver.sh — remove CodePadAudio.driver from the system HAL plug-in directory.
 #
-# Executed as root (via osascript "with administrator privileges" from the VibePad helper app).
+# Executed as root (via osascript "with administrator privileges" from the CodePad helper app).
 # Idempotent: a missing driver is not an error. Callers are responsible for also destroying the
-# VibePad aggregate device via AudioHardwareDestroyAggregateDevice.
+# CodePad aggregate device via AudioHardwareDestroyAggregateDevice.
 
 set -euo pipefail
 
-readonly DRIVER_NAME="VibePadAudio.driver"
+readonly DRIVER_NAME="CodePadAudio.driver"
 readonly HAL_DIR="/Library/Audio/Plug-Ins/HAL"
 readonly TARGET="$HAL_DIR/$DRIVER_NAME"
 

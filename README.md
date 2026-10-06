@@ -1,6 +1,6 @@
-# VibePad
+# CodePad
 
-<p align="center"><img src="docs/assets/vibepad-icon.png" width="128" alt="VibePad 图标"></p>
+<p align="center"><img src="docs/assets/codepad-icon.png" width="128" alt="CodePad 图标"></p>
 
 安卓平板变 Mac 无线触控台：触控板与系统手势、Vibe Coding 快捷键、Touch Bar 画面回传、
 平板麦克风直通 Typeless。平板与 Mac 在同一局域网内自动发现、直连，
@@ -9,12 +9,12 @@
 ## 界面预览（真机截图）
 
 布局（左/中/右三套排布）与配色（经典黑 / 深空灰 / 暖钛浅 / 深夜蓝 / 墨绿 / 暗紫 / 跟随 Mac）
-是两个独立维度，可在平板设置弹层或 Mac 菜单栏「VibePad 设置…」里自由组合。
+是两个独立维度，可在平板设置弹层或 Mac 菜单栏「CodePad 设置…」里自由组合。
 下方截图展示三套默认组合（布局 id = 配色 id）：
 
 | 经典（classic） | 深空专业（graphite） | 双手操控（titanium） |
 | :---: | :---: | :---: |
-| [![经典皮肤](docs/assets/vibepad-classic.png)](docs/assets/vibepad-classic.png) | [![深空专业皮肤](docs/assets/vibepad-graphite.png)](docs/assets/vibepad-graphite.png) | [![双手操控皮肤](docs/assets/vibepad-titanium.png)](docs/assets/vibepad-titanium.png) |
+| [![经典皮肤](docs/assets/codepad-classic.png)](docs/assets/codepad-classic.png) | [![深空专业皮肤](docs/assets/codepad-graphite.png)](docs/assets/codepad-graphite.png) | [![双手操控皮肤](docs/assets/codepad-titanium.png)](docs/assets/codepad-titanium.png) |
 
 - **经典**：左手一列集成常用 App、Vibe Coding 键位与编辑键，右侧整面触控板。
 - **深空专业**：左侧大触控板 + 右侧快捷键列 + 底部 App 坞。
@@ -31,21 +31,21 @@
 
 **方式 A：下载安装包（推荐，不用构建）**
 
-到 [Releases](https://github.com/xiaoxi668v-prog/vibepad/releases/latest) 下载两个文件：
+到 [Releases](https://github.com/jerrywxy2000-maker/codepad/releases/latest) 下载两个文件：
 
-1. `VibePadHelper-x.x.x-macos.zip`：解压后把 `VibePad Helper.app` 拖进「应用程序」。
+1. `CodePadHelper-x.x.x-macos.zip`：解压后把 `CodePad Helper.app` 拖进「应用程序」。
    **首次打开要右键 → 打开**（个人开发者签名未公证，Gatekeeper 会拦一次，属正常）。
-2. `VibePad-x.x.x.apk`：装到平板上，任选一种：
-   - 平板 USB 连 Mac（开 USB 调试），执行 `adb install VibePad-x.x.x.apk`；
+2. `CodePad-x.x.x.apk`：装到平板上，任选一种：
+   - 平板 USB 连 Mac（开 USB 调试），执行 `adb install CodePad-x.x.x.apk`；
    - 或把 APK 通过微信/网盘发到平板上直接点击安装（允许「未知来源」）。
 
 **方式 B：从源码构建**
 
 ```bash
-git clone https://github.com/xiaoxi668v-prog/vibepad.git
-cd vibepad
+git clone https://github.com/jerrywxy2000-maker/codepad.git
+cd codepad
 export SIGNING_IDENTITY="Apple Development: 你的邮箱 (你的团队ID)"
-scripts/release-vibepad.sh --install
+scripts/release-codepad.sh --install
 ```
 
 脚本会自动做完三件事：把 Mac 端 Helper 装进 `~/Applications` 并注册开机自启、
@@ -60,17 +60,17 @@ Android SDK），按提示装好再跑一次即可。
 ### 第 2 步：给 Mac 授权（只做一次）
 
 第一次启动 Helper 时，Mac 会提示缺少「辅助功能」权限：
-系统设置 → 隐私与安全性 → 辅助功能 → 打开 **VibePad Helper**，然后重启 Helper。
+系统设置 → 隐私与安全性 → 辅助功能 → 打开 **CodePad Helper**，然后重启 Helper。
 如果 macOS 问「是否允许传入网络连接」，选**允许**。
 
 ### 第 3 步：配对（只做一次）
 
-1. 平板打开 VibePad，点左上角 **齿轮** 打开设置；
+1. 平板打开 CodePad，点左上角 **齿轮** 打开设置；
 2. 点「**重新配对这台平板**」；
-3. Mac 菜单栏点 VibePad 图标 → 「**允许配对新平板（60 秒）**」；
+3. Mac 菜单栏点 CodePad 图标 → 「**允许配对新平板（60 秒）**」；
 4. 平板和 Mac 会显示**同一个 6 位验证码**，核对一致后在 **Mac 上**点「允许」。
 
-<p align="center"><img src="docs/assets/guide-settings.png" width="720" alt="VibePad 设置弹层"></p>
+<p align="center"><img src="docs/assets/guide-settings.png" width="720" alt="CodePad 设置弹层"></p>
 
 配对成功后平板顶栏显示「已连接」，以后打开 App 会自动重连，不用再配对。
 
@@ -79,27 +79,27 @@ Android SDK），按提示装好再跑一次即可。
 - **触控板**：单指移动光标、轻点=左键、双指滚动、双指轻点=右键、
   捏合缩放、三/四指滑动触发 Mission Control 等系统手势。
 - **按住说话**：按住右下角的麦克风按钮说话，松开后语音直通 Mac 上的
-  Typeless 转写（首次使用在 Mac 菜单栏「VibePad 设置… → 麦克风驱动」
+  Typeless 转写（首次使用在 Mac 菜单栏「CodePad 设置… → 麦克风驱动」
   点一次「安装驱动」即可，不装也不影响其他功能）。
 - **切换布局 / 配色 / 改灵敏度 / 设置常用 App**：平板点齿轮，或在 Mac 菜单栏
-  「VibePad 设置…」里改，两端自动同步。
+  「CodePad 设置…」里改，两端自动同步。
 
 ### 常见问题
 
 | 症状 | 解决办法 |
 | --- | --- |
 | 平板一直「正在查找 Mac」 | 确认两台设备在同一个 WiFi；在 Mac 菜单栏重启 Helper |
-| 平板显示已连接但 Mac 没反应 | 辅助功能授权丢了：系统设置里重新打开 VibePad Helper 的开关 |
-| 「按住说话」没反应 | Mac 菜单栏「VibePad 设置… → 麦克风驱动」里点「安装驱动…」；不用此功能可忽略 |
-| 想卸载 | 先在「VibePad 设置… → 麦克风驱动」里点「卸载」，再删除 `~/Applications/VibePad Helper.app` 和 `~/Library/LaunchAgents/com.xiaoxi.vibepad.mac-helper.plist`；平板上正常卸载 App |
+| 平板显示已连接但 Mac 没反应 | 辅助功能授权丢了：系统设置里重新打开 CodePad Helper 的开关 |
+| 「按住说话」没反应 | Mac 菜单栏「CodePad 设置… → 麦克风驱动」里点「安装驱动…」；不用此功能可忽略 |
+| 想卸载 | 先在「CodePad 设置… → 麦克风驱动」里点「卸载」，再删除 `~/Applications/CodePad Helper.app` 和 `~/Library/LaunchAgents/com.xiaoxi.codepad.mac-helper.plist`；平板上正常卸载 App |
 
 ## 给开发者
 
 ### 结构
 
 ```text
-android/     安卓平板 App（Kotlin，包名 com.xiaoxi.vibepad）
-mac-helper/  Mac 菜单栏 Helper（Swift，Bundle ID com.xiaoxi.vibepad.helper）与
+android/     安卓平板 App（Kotlin，包名 com.xiaoxi.codepad）
+mac-helper/  Mac 菜单栏 Helper（Swift，Bundle ID com.xiaoxi.codepad.helper）与
              自研 HAL 音频驱动（Driver/，AudioServerPlugIn 回环声卡）
 designs/     平板端布局与配色系统的设计参考（01 经典黑 / 02 深空专业 / 05 双手操控）及设计源码；
               配色已解耦，可新增深夜蓝/墨绿/暗紫等主题而不改布局
@@ -116,7 +116,7 @@ backups/     安装前自动备份（本地产出，不进 git）
   “辅助功能”权限，而 ad-hoc 签名每次构建都会变成“新应用”并静默丢失授权，
   所以脚本强制要求固定身份，见 [mac-helper/README.md](mac-helper/README.md)。
 - Android 9（API 28）以上的横屏平板，JDK 17 与 Android SDK。
-- 麦克风直通使用内置的自研 HAL 驱动 VibePadAudio（源码在 `mac-helper/Driver/`，
+- 麦克风直通使用内置的自研 HAL 驱动 CodePadAudio（源码在 `mac-helper/Driver/`，
   随 App 打包，设置窗口一键安装/卸载，无需第三方虚拟声卡）。未安装驱动时触控、
   键盘、Touch Bar 照常可用，仅“按住说话”不可用。
 
@@ -124,16 +124,16 @@ backups/     安装前自动备份（本地产出，不进 git）
 
 ```bash
 export SIGNING_IDENTITY="Apple Development: you@example.com (TEAMID1234)"
-scripts/release-vibepad.sh            # 构建 + 签名 + 打包到 dist/
-scripts/release-vibepad.sh --install  # 并安装到本机 ~/Applications 与已连接平板
+scripts/release-codepad.sh            # 构建 + 签名 + 打包到 dist/
+scripts/release-codepad.sh --install  # 并安装到本机 ~/Applications 与已连接平板
 ```
 
 脚本在签名身份缺失时直接停止，绝不回退 ad-hoc 签名。`JAVA_HOME`、`ANDROID_HOME`、
 `VIBEPAD_INSTALL_DIR` 均可用环境变量覆盖。
 
-配置同步：界面布局、配色、常用 App 和触控灵敏度可以在 Mac 菜单栏的「VibePad 设置…」
+配置同步：界面布局、配色、常用 App 和触控灵敏度可以在 Mac 菜单栏的「CodePad 设置…」
 里配置，两端通过 `0x60/0x61/0x62` 三个帧双向同步，Mac 侧存在
-`~/Library/Application Support/VibePad/pad-config.json`。布局与配色是两个独立维度，
+`~/Library/Application Support/CodePad/pad-config.json`。布局与配色是两个独立维度，
 可自由组合；配色选「跟随 Mac」时，实际明暗由 `0x21 PONG` 心跳里的 `appearance`
 字段下发（属于运行时状态，不写进配置）。
 

@@ -1,4 +1,4 @@
-package com.xiaoxi.vibepad.ui
+package com.xiaoxi.codepad.ui
 
 import android.content.Context
 import android.util.Log
@@ -238,8 +238,8 @@ class PadConfigStore private constructor(context: Context) {
     }
 
     companion object {
-        private const val TAG = "VibePadConfig"
-        const val PREFS_NAME = "vibepad_ui"
+        private const val TAG = "CodePadConfig"
+        const val PREFS_NAME = "codepad_ui"
         private const val PREF_REVISION = "config_revision"
         private const val PREF_SKIN = "skin"
         private const val PREF_LAYOUT = "layout"

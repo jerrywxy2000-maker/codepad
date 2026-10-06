@@ -15,19 +15,19 @@ ROOT="${SCRIPT_DIR:h}"
 ANDROID_PROJECT="$ROOT/android"
 HELPER_PROJECT="$ROOT/mac-helper"
 INSTALL_DIR="${VIBEPAD_INSTALL_DIR:-$HOME/Applications}"
-INSTALLED_HELPER="$INSTALL_DIR/VibePad Helper.app"
+INSTALLED_HELPER="$INSTALL_DIR/CodePad Helper.app"
 SIGNING_IDENTITY="${SIGNING_IDENTITY:-}"
 DIST_DIR="$ROOT/dist"
-STAGED_HELPER="$DIST_DIR/VibePad Helper.app"
+STAGED_HELPER="$DIST_DIR/CodePad Helper.app"
 INFO_PLIST_TEMPLATE="$HELPER_PROJECT/Resources/Info.plist"
-LAUNCH_AGENT_TEMPLATE="$SCRIPT_DIR/com.xiaoxi.vibepad.mac-helper.plist"
-LAUNCH_AGENT_LABEL="com.xiaoxi.vibepad.mac-helper"
+LAUNCH_AGENT_TEMPLATE="$SCRIPT_DIR/com.xiaoxi.codepad.mac-helper.plist"
+LAUNCH_AGENT_LABEL="com.xiaoxi.codepad.mac-helper"
 LAUNCH_AGENT_PATH="$HOME/Library/LaunchAgents/$LAUNCH_AGENT_LABEL.plist"
 APK="$ANDROID_PROJECT/app/build/outputs/apk/debug/app-debug.apk"
 # --arch 多架构构建的产物在 .build/apple/Products/Release/；单架构在 .build/release/
-HELPER_BINARY="$HELPER_PROJECT/.build/apple/Products/Release/vibepad-mac-helper"
+HELPER_BINARY="$HELPER_PROJECT/.build/apple/Products/Release/codepad-mac-helper"
 if [[ ! -f "$HELPER_BINARY" ]]; then
-  HELPER_BINARY="$HELPER_PROJECT/.build/release/vibepad-mac-helper"
+  HELPER_BINARY="$HELPER_PROJECT/.build/release/codepad-mac-helper"
 fi
 MODE="${1:-stage}"
 # --mac-only：跳过 Android APK 构建，只产出 Mac 端 Helper（本机没有 Android SDK 时用）
@@ -67,18 +67,18 @@ fi
 
 mkdir -p "$DIST_DIR"
 if [[ -e "$STAGED_HELPER" ]]; then
-  mv "$STAGED_HELPER" "$DIST_DIR/VibePad Helper.previous.$(date +%Y%m%d-%H%M%S).app"
+  mv "$STAGED_HELPER" "$DIST_DIR/CodePad Helper.previous.$(date +%Y%m%d-%H%M%S).app"
 fi
 
 # 从仓库模板构建 App bundle，不依赖已安装副本
 mkdir -p "$STAGED_HELPER/Contents/MacOS" "$STAGED_HELPER/Contents/Resources/Driver"
 cp -p "$INFO_PLIST_TEMPLATE" "$STAGED_HELPER/Contents/Info.plist"
 cp -p "$HELPER_PROJECT/Resources/AppIcon.icns" "$STAGED_HELPER/Contents/Resources/AppIcon.icns"
-cp -p "$HELPER_BINARY" "$STAGED_HELPER/Contents/MacOS/vibepad-mac-helper"
+cp -p "$HELPER_BINARY" "$STAGED_HELPER/Contents/MacOS/codepad-mac-helper"
 
 # 麦克风驱动及一键安装/卸载脚本随 App 分发，由设置窗口通过系统授权框安装
-ditto "$HELPER_PROJECT/Driver/build/VibePadAudio.driver" \
-  "$STAGED_HELPER/Contents/Resources/Driver/VibePadAudio.driver"
+ditto "$HELPER_PROJECT/Driver/build/CodePadAudio.driver" \
+  "$STAGED_HELPER/Contents/Resources/Driver/CodePadAudio.driver"
 cp -p "$HELPER_PROJECT/Driver/install-driver.sh" \
       "$HELPER_PROJECT/Driver/uninstall-driver.sh" \
       "$STAGED_HELPER/Contents/Resources/Driver/"
@@ -90,7 +90,7 @@ codesign --verify --deep --strict --verbose=2 "$STAGED_HELPER"
 # designated requirement 必须绑定固定 Bundle ID 与开发者证书，而不是本次构建的 cdhash；
 # 否则每次更新二进制后 macOS 都会静默收回“辅助功能”授权。
 requirement="$(codesign -dvvv -r- "$STAGED_HELPER" 2>&1)"
-if [[ "$requirement" != *'identifier "com.xiaoxi.vibepad.helper"'* ||
+if [[ "$requirement" != *'identifier "com.xiaoxi.codepad.helper"'* ||
       "$requirement" != *"anchor apple generic"* ||
       "$requirement" != *"$SIGNING_IDENTITY"* ]]; then
   echo "Staged helper designated requirement is not stable; refusing to continue." >&2
@@ -98,11 +98,11 @@ if [[ "$requirement" != *'identifier "com.xiaoxi.vibepad.helper"'* ||
 fi
 
 if [[ "$MAC_ONLY" -eq 0 ]]; then
-  cp -p "$APK" "$DIST_DIR/VibePad-debug.apk"
-  shasum -a 256 "$DIST_DIR/VibePad-debug.apk" \
-    "$STAGED_HELPER/Contents/MacOS/vibepad-mac-helper"
+  cp -p "$APK" "$DIST_DIR/CodePad-debug.apk"
+  shasum -a 256 "$DIST_DIR/CodePad-debug.apk" \
+    "$STAGED_HELPER/Contents/MacOS/codepad-mac-helper"
 else
-  shasum -a 256 "$STAGED_HELPER/Contents/MacOS/vibepad-mac-helper"
+  shasum -a 256 "$STAGED_HELPER/Contents/MacOS/codepad-mac-helper"
 fi
 
 if [[ "$MODE" == "--install" ]]; then
@@ -115,11 +115,11 @@ if [[ "$MODE" == "--install" ]]; then
   backup_dir="$ROOT/backups/$stamp"
   mkdir -p "$backup_dir"
   if [[ -d "$INSTALLED_HELPER" ]]; then
-    ditto "$INSTALLED_HELPER" "$backup_dir/VibePad Helper.app"
+    ditto "$INSTALLED_HELPER" "$backup_dir/CodePad Helper.app"
   fi
   installed_apk=""
   if [[ "$MAC_ONLY" -eq 0 ]]; then
-    installed_apk="$(adb shell pm path com.xiaoxi.vibepad 2>/dev/null | head -n 1 | tr -d '\r' | sed 's/^package://' || true)"
+    installed_apk="$(adb shell pm path com.xiaoxi.codepad 2>/dev/null | head -n 1 | tr -d '\r' | sed 's/^package://' || true)"
     if [[ -n "$installed_apk" ]]; then
       adb pull "$installed_apk" "$backup_dir/app-before-install.apk"
     fi
@@ -133,7 +133,7 @@ if [[ "$MODE" == "--install" ]]; then
   mkdir -p "$HOME/Library/LaunchAgents" "$HOME/Library/Logs"
   launchctl bootout "gui/$(id -u)/com.xiaoxi.webpad.mac-helper" 2>/dev/null || true  # 旧名称
   launchctl bootout "gui/$(id -u)/$LAUNCH_AGENT_LABEL" 2>/dev/null || true
-  sed -e "s|__HELPER_BINARY__|$INSTALLED_HELPER/Contents/MacOS/vibepad-mac-helper|g" \
+  sed -e "s|__HELPER_BINARY__|$INSTALLED_HELPER/Contents/MacOS/codepad-mac-helper|g" \
       -e "s|__HOME__|$HOME|g" \
       "$LAUNCH_AGENT_TEMPLATE" > "$LAUNCH_AGENT_PATH"
   launchctl bootstrap "gui/$(id -u)" "$LAUNCH_AGENT_PATH"
@@ -144,7 +144,7 @@ if [[ "$MODE" == "--install" ]]; then
 
   echo ""
   echo "安装完成。首次安装或签名身份变化后还需手动完成："
-  echo "1. 系统设置 → 隐私与安全性 → 辅助功能 → 添加 VibePad Helper（旧条目先移除）"
+  echo "1. 系统设置 → 隐私与安全性 → 辅助功能 → 添加 CodePad Helper（旧条目先移除）"
   echo "2. 平板端进入设置页配对（Mac 菜单栏先点“允许配对新平板（60 秒）”）"
-  echo "3. Typeless 输入源选择「VibePad Microphone」"
+  echo "3. Typeless 输入源选择「CodePad Microphone」"
 fi

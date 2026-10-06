@@ -1,4 +1,4 @@
-package com.xiaoxi.vibepad.ui
+package com.xiaoxi.codepad.ui
 
 import android.content.Context
 import android.content.Intent
@@ -19,9 +19,9 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import com.xiaoxi.vibepad.R
-import com.xiaoxi.vibepad.input.HelperHealth
-import com.xiaoxi.vibepad.input.InputSink
+import com.xiaoxi.codepad.R
+import com.xiaoxi.codepad.input.HelperHealth
+import com.xiaoxi.codepad.input.InputSink
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -72,8 +72,8 @@ class SystemBarView(
         }, LayoutParams(dp(18), dp(18)).apply { marginEnd = dp(9) })
         addView(battery, LayoutParams(dp(34), dp(18)))
         addView(settingsButton.apply {
-            setImageResource(R.drawable.ic_settings_vibepad)
-            contentDescription = "VibePad 设置"
+            setImageResource(R.drawable.ic_settings_codepad)
+            contentDescription = "CodePad 设置"
             setPadding(dp(7), dp(7), dp(7), dp(7))
             background = null
             setOnClickListener { onSettingsClick() }

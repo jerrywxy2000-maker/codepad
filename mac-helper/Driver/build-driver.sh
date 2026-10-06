@@ -1,8 +1,8 @@
 #!/bin/bash
-# build-driver.sh — compile the VibePadAudio AudioServerPlugIn into a .driver bundle.
+# build-driver.sh — compile the CodePadAudio AudioServerPlugIn into a .driver bundle.
 #
-# Produces mac-helper/Driver/build/VibePadAudio.driver with the standard bundle layout:
-#   Contents/MacOS/VibePadAudio   (universal arm64+x86_64, ad-hoc or identity signed)
+# Produces mac-helper/Driver/build/CodePadAudio.driver with the standard bundle layout:
+#   Contents/MacOS/CodePadAudio   (universal arm64+x86_64, ad-hoc or identity signed)
 #   Contents/Info.plist
 #
 # Signing identity is taken from the SIGNING_IDENTITY environment variable; when unset the
@@ -11,10 +11,10 @@
 set -euo pipefail
 
 DRIVER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SRC_DIR="$DRIVER_DIR/VibePadAudio"
+SRC_DIR="$DRIVER_DIR/CodePadAudio"
 BUILD_DIR="$DRIVER_DIR/build"
-BUNDLE_DIR="$BUILD_DIR/VibePadAudio.driver"
-EXECUTABLE_NAME="VibePadAudio"
+BUNDLE_DIR="$BUILD_DIR/CodePadAudio.driver"
+EXECUTABLE_NAME="CodePadAudio"
 SIGNING_IDENTITY="${SIGNING_IDENTITY:--}"
 
 echo ">> Building $EXECUTABLE_NAME from $SRC_DIR"
@@ -31,7 +31,7 @@ xcrun clang -bundle -fobjc-arc -O2 \
     -framework CoreFoundation \
     -framework CoreAudio \
     -o "$BUNDLE_DIR/Contents/MacOS/$EXECUTABLE_NAME" \
-    "$SRC_DIR/VibePadAudioDriver.m"
+    "$SRC_DIR/CodePadAudioDriver.m"
 
 cp "$SRC_DIR/Info.plist" "$BUNDLE_DIR/Contents/Info.plist"
 plutil -lint "$BUNDLE_DIR/Contents/Info.plist"

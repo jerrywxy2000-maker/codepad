@@ -1,24 +1,24 @@
 import Foundation
 
-/// Installs/removes the VibePadAudio HAL plug-in. The .driver bundle and the install scripts
+/// Installs/removes the CodePadAudio HAL plug-in. The .driver bundle and the install scripts
 /// ship inside the app (Contents/Resources/Driver). Privileged execution goes through
 /// AppleScript's "with administrator privileges": the user types their password into the
 /// system dialog and the helper never sees it.
 enum DriverInstaller {
-    static let installedPath = "/Library/Audio/Plug-Ins/HAL/VibePadAudio.driver"
+    static let installedPath = "/Library/Audio/Plug-Ins/HAL/CodePadAudio.driver"
 
     static var isInstalled: Bool {
         FileManager.default.fileExists(atPath: installedPath)
     }
 
     static var bundledDriverAvailable: Bool {
-        resource("VibePadAudio", "driver") != nil
+        resource("CodePadAudio", "driver") != nil
     }
 
     static func install(completion: @escaping (Bool, String) -> Void) {
         guard let script = resource("install-driver", "sh"),
-              let driver = resource("VibePadAudio", "driver") else {
-            completion(false, "安装包内缺少驱动文件，请重新下载 VibePad Helper。")
+              let driver = resource("CodePadAudio", "driver") else {
+            completion(false, "安装包内缺少驱动文件，请重新下载 CodePad Helper。")
             return
         }
         runAsRoot(script: script, arguments: [driver.path], completion: completion)
@@ -26,7 +26,7 @@ enum DriverInstaller {
 
     static func uninstall(completion: @escaping (Bool, String) -> Void) {
         guard let script = resource("uninstall-driver", "sh") else {
-            completion(false, "安装包内缺少卸载脚本，请重新下载 VibePad Helper。")
+            completion(false, "安装包内缺少卸载脚本，请重新下载 CodePad Helper。")
             return
         }
         AggregateMicrophone.destroy()

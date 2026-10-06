@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- 模板：__HELPER_BINARY__ 与 __HOME__ 由 scripts/release-vibepad.sh 在安装时替换。 -->
+<!-- 模板：__HELPER_BINARY__ 与 __HOME__ 由 scripts/release-codepad.sh 在安装时替换。 -->
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.xiaoxi.vibepad.mac-helper</string>
+    <string>com.xiaoxi.codepad.mac-helper</string>
     <key>ProgramArguments</key>
     <array>
         <string>__HELPER_BINARY__</string>
@@ -18,8 +18,8 @@
     <key>ProcessType</key>
     <string>Interactive</string>
     <key>StandardOutPath</key>
-    <string>__HOME__/Library/Logs/VibePadMacHelper.log</string>
+    <string>__HOME__/Library/Logs/CodePadMacHelper.log</string>
     <key>StandardErrorPath</key>
-    <string>__HOME__/Library/Logs/VibePadMacHelper.error.log</string>
+    <string>__HOME__/Library/Logs/CodePadMacHelper.error.log</string>
 </dict>
 </plist>

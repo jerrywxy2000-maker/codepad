@@ -1,29 +1,29 @@
 import CoreAudio
 import Foundation
 
-/// Publishes the VibePadAudio loopback device through a public Aggregate Device. Typeless
+/// Publishes the CodePadAudio loopback device through a public Aggregate Device. Typeless
 /// intentionally hides virtual-transport devices, but accepts an Aggregate input device.
 /// The aggregate is persistent at the CoreAudio layer so Typeless keeps a stable
 /// UID across helper restarts; the helper only creates it when it is missing.
 enum AggregateMicrophone {
-    static let name = "VibePad Microphone"
-    static let uid = "com.xiaoxi.vibepad.microphone"
+    static let name = "CodePad Microphone"
+    static let uid = "com.xiaoxi.codepad.microphone"
     private static let driverUID = AudioSink.targetDeviceUID
 
     @discardableResult
     static func ensureAvailable() -> Bool {
         if let existing = findDevice(uid: uid) {
             if subDeviceUIDs(existing).contains(driverUID), inputChannelCount(existing) > 0 {
-                print("VibePad aggregate microphone is available (device \(existing))")
+                print("CodePad aggregate microphone is available (device \(existing))")
                 return true
             }
             // Stale aggregate from an older install (e.g. still wrapping TFFAudio):
-            // destroy it so it gets recreated around the current VibePadAudio device.
+            // destroy it so it gets recreated around the current CodePadAudio device.
             AudioHardwareDestroyAggregateDevice(existing)
-            print("Destroyed stale VibePad aggregate microphone (device \(existing))")
+            print("Destroyed stale CodePad aggregate microphone (device \(existing))")
         }
         guard findDevice(uid: driverUID) != nil else {
-            print("VibePad aggregate microphone unavailable: the VibePadAudio device was not found")
+            print("CodePad aggregate microphone unavailable: the CodePadAudio device was not found")
             return false
         }
 
@@ -38,22 +38,22 @@ enum AggregateMicrophone {
         var aggregate: AudioDeviceID = 0
         let status = AudioHardwareCreateAggregateDevice(description as CFDictionary, &aggregate)
         guard status == noErr else {
-            print("Could not create VibePad aggregate microphone: OSStatus \(status)")
+            print("Could not create CodePad aggregate microphone: OSStatus \(status)")
             return false
         }
         guard inputChannelCount(aggregate) > 0 else {
             AudioHardwareDestroyAggregateDevice(aggregate)
-            print("Created VibePad aggregate microphone had no input channels")
+            print("Created CodePad aggregate microphone had no input channels")
             return false
         }
-        print("Created VibePad aggregate microphone (device \(aggregate), UID \(uid))")
+        print("Created CodePad aggregate microphone (device \(aggregate), UID \(uid))")
         return true
     }
 
     static func destroy() {
         if let existing = findDevice(uid: uid) {
             AudioHardwareDestroyAggregateDevice(existing)
-            print("Destroyed VibePad aggregate microphone (device \(existing))")
+            print("Destroyed CodePad aggregate microphone (device \(existing))")
         }
     }
 

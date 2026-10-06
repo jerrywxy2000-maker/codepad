@@ -1,4 +1,4 @@
-package com.xiaoxi.vibepad.ui
+package com.xiaoxi.codepad.ui
 
 import android.content.Context
 import android.graphics.Canvas
@@ -10,9 +10,9 @@ import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
-import com.xiaoxi.vibepad.input.HidButtons
-import com.xiaoxi.vibepad.input.InputSink
-import com.xiaoxi.vibepad.input.TrackpadGesture
+import com.xiaoxi.codepad.input.HidButtons
+import com.xiaoxi.codepad.input.InputSink
+import com.xiaoxi.codepad.input.TrackpadGesture
 import kotlin.math.abs
 import kotlin.math.hypot
 import kotlin.math.pow
@@ -23,7 +23,7 @@ class TrackpadView(
     private val sinkProvider: () -> InputSink,
 ) : View(context) {
     private val density = resources.displayMetrics.density
-    private val prefs = context.getSharedPreferences("vibepad_ui", Context.MODE_PRIVATE)
+    private val prefs = context.getSharedPreferences("codepad_ui", Context.MODE_PRIVATE)
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val bounds = RectF()
     private val handler = Handler(Looper.getMainLooper())

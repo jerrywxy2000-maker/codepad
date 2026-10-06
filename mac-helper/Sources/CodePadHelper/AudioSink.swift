@@ -12,11 +12,11 @@ private func vibePadAudioQueueCallback(
         .audioQueueDidFinish(audioQueue, buffer: buffer)
 }
 
-/// Owns the single virtual-audio output used by all authenticated VibePad sessions.
+/// Owns the single virtual-audio output used by all authenticated CodePad sessions.
 /// Network PCM is 24 kHz mono; output is explicitly converted to the native
-/// 48 kHz stereo PCM accepted by the VibePadAudio HAL driver. All mutable state lives on `queue`.
+/// 48 kHz stereo PCM accepted by the CodePadAudio HAL driver. All mutable state lives on `queue`.
 final class AudioSink {
-    static let targetDeviceUID = "com.xiaoxi.vibepad.audio.device"
+    static let targetDeviceUID = "com.xiaoxi.codepad.audio.device"
 
     private static let requiredSampleRate: UInt32 = 24_000
     private static let requiredChannels: UInt8 = 1
@@ -28,7 +28,7 @@ final class AudioSink {
     private static let outputBufferCount = 40 // 800 ms; exceeds the scheduled-latency cap below
     private static let maximumScheduledFrames = 38_400 // 800 ms at 48 kHz
 
-    private let queue = DispatchQueue(label: "com.xiaoxi.vibepad.audio", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "com.xiaoxi.codepad.audio", qos: .userInitiated)
     private var owner: UUID?
     private var streamID: UInt32 = 0
     private var outputQueue: AudioQueueRef?
@@ -55,16 +55,16 @@ final class AudioSink {
                   channels == Self.requiredChannels,
                   format == Self.requiredFormat,
                   framesPerPacket == Self.requiredFramesPerPacket else {
-                print("Rejected unsupported VibePad audio format: \(sampleRate) Hz, \(channels) channel(s), format \(format), \(framesPerPacket) frames")
+                print("Rejected unsupported CodePad audio format: \(sampleRate) Hz, \(channels) channel(s), format \(format), \(framesPerPacket) frames")
                 return false
             }
             guard owner == nil || owner == requestedOwner else {
-                print("Rejected VibePad audio start because the VibePadAudio device is already in use")
+                print("Rejected CodePad audio start because the CodePadAudio device is already in use")
                 return false
             }
             stopLocked(reason: "restart")
             guard Self.targetOutputDeviceExists() else {
-                print("VibePad audio unavailable: VibePadAudio UID \(Self.targetDeviceUID) was not found as an output device")
+                print("CodePad audio unavailable: CodePadAudio UID \(Self.targetDeviceUID) was not found as an output device")
                 return false
             }
 
@@ -90,7 +90,7 @@ final class AudioSink {
                 &createdQueue
             )
             guard createStatus == noErr, let createdQueue else {
-                print("VibePad audio could not create AudioQueue: OSStatus \(createStatus)")
+                print("CodePad audio could not create AudioQueue: OSStatus \(createStatus)")
                 return false
             }
 
@@ -105,7 +105,7 @@ final class AudioSink {
             }
             guard routeStatus == noErr else {
                 AudioQueueDispose(createdQueue, true)
-                print("VibePad audio could not direct AudioQueue to VibePadAudio: OSStatus \(routeStatus)")
+                print("CodePad audio could not direct AudioQueue to CodePadAudio: OSStatus \(routeStatus)")
                 return false
             }
 
@@ -119,7 +119,7 @@ final class AudioSink {
                 )
                 guard status == noErr, let buffer else {
                     AudioQueueDispose(createdQueue, true)
-                    print("VibePad audio could not allocate AudioQueue buffers: OSStatus \(status)")
+                    print("CodePad audio could not allocate AudioQueue buffers: OSStatus \(status)")
                     return false
                 }
                 allocated.append(buffer)
@@ -131,7 +131,7 @@ final class AudioSink {
             allBuffers = allocated
             freeBuffers = allocated
             let prebufferMs = Self.prebufferPacketCount * Int(Self.requiredFramesPerPacket) * 1000 / Int(Self.requiredSampleRate)
-            print("VibePad audio stream \(requestedStreamID) opened on directed VibePadAudio AudioQueue (\(prebufferMs) ms prebuffer)")
+            print("CodePad audio stream \(requestedStreamID) opened on directed CodePadAudio AudioQueue (\(prebufferMs) ms prebuffer)")
             return true
         }
     }
@@ -153,27 +153,27 @@ final class AudioSink {
                   pcm16LE.count == Int(sampleCount) * 2 else { return }
 
             if let previous = self.lastAudioSequence, audioSequence != previous &+ 1 {
-                print("VibePad audio discontinuity \(previous) -> \(audioSequence) at \(captureTimeNs) ns; rebuffering")
+                print("CodePad audio discontinuity \(previous) -> \(audioSequence) at \(captureTimeNs) ns; rebuffering")
                 self.resetPlaybackLocked()
             }
             self.lastAudioSequence = audioSequence
             let nowNs = DispatchTime.now().uptimeNanoseconds
             if self.lastArrivalNs != 0 {
                 let gapMs = (nowNs - self.lastArrivalNs) / 1_000_000
-                if gapMs > 150 { print("VibePad audio arrival gap \(gapMs) ms") }
+                if gapMs > 150 { print("CodePad audio arrival gap \(gapMs) ms") }
             }
             self.lastArrivalNs = nowNs
             let converted = Self.upsampleTo48kStereo(pcm16LE)
 
             if self.playbackStarted,
                self.scheduledFrames + Self.outputFramesPerPacket > Self.maximumScheduledFrames {
-                print("VibePad audio exceeded \(Self.maximumScheduledFrames / 48) ms queued latency; rebuffering latest audio")
+                print("CodePad audio exceeded \(Self.maximumScheduledFrames / 48) ms queued latency; rebuffering latest audio")
                 self.resetPlaybackLocked()
             }
 
             if self.playbackStarted {
                 if !self.enqueueOutputLocked(converted) {
-                    print("VibePad audio ran out of output buffers; rebuffering")
+                    print("CodePad audio ran out of output buffers; rebuffering")
                     self.resetPlaybackLocked()
                     self.pending.append(converted)
                 }
@@ -203,7 +203,7 @@ final class AudioSink {
             self.scheduledFrames = max(0, self.scheduledFrames - Self.outputFramesPerPacket)
             // A virtual AudioQueue may return buffers as soon as their bytes have
             // entered the driver, before the loopback input exposes those samples.
-            // Do not reset here: doing so truncates the VibePadAudio driver's internal pipeline.
+            // Do not reset here: doing so truncates the CodePadAudio driver's internal pipeline.
             // AudioQueue itself emits silence during a genuine producer gap and
             // resumes when the next packet is enqueued.
         }
@@ -222,7 +222,7 @@ final class AudioSink {
         }
         let status = AudioQueueStart(outputQueue, nil)
         guard status == noErr else {
-            print("VibePad AudioQueue failed to start: OSStatus \(status)")
+            print("CodePad AudioQueue failed to start: OSStatus \(status)")
             resetPlaybackLocked()
             return
         }
@@ -241,7 +241,7 @@ final class AudioSink {
         let status = AudioQueueEnqueueBuffer(outputQueue, buffer, 0, nil)
         guard status == noErr else {
             freeBuffers.append(buffer)
-            print("VibePad AudioQueue enqueue failed: OSStatus \(status)")
+            print("CodePad AudioQueue enqueue failed: OSStatus \(status)")
             return false
         }
         inUseBuffers.insert(UInt(bitPattern: buffer))
@@ -279,7 +279,7 @@ final class AudioSink {
         lastAudioSequence = nil
         owner = nil
         streamID = 0
-        if oldStreamID != 0 { print("VibePad audio stream \(oldStreamID) stopped (\(reason))") }
+        if oldStreamID != 0 { print("CodePad audio stream \(oldStreamID) stopped (\(reason))") }
     }
 
     private static func upsampleTo48kStereo(_ pcm16LE: Data) -> Data {

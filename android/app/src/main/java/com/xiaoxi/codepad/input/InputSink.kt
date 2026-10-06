@@ -1,4 +1,4 @@
-package com.xiaoxi.vibepad.input
+package com.xiaoxi.codepad.input
 
 interface InputSink {
     val isConnected: Boolean

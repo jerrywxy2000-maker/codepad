@@ -1,4 +1,4 @@
-# VibePad 自研虚拟麦克风驱动（AudioServerPlugIn）技术设计
+# CodePad 自研虚拟麦克风驱动（AudioServerPlugIn）技术设计
 
 > 状态：设计稿（仅调研与设计，不含实现代码）
 > 目标：替代第三方 TFFAudio 虚拟声卡，Helper 首次运行弹一次管理员授权自动装好驱动，之后用户零操作。
@@ -10,7 +10,7 @@
 
 我们要自己写一个 macOS 系统级的「假麦克风」，换掉现在让用户手动安装的 TFFAudio。结论一句话：**完全可行，技术上没有硬门槛，免费分发也不需要花钱买苹果证书**。
 
-- **形态**：做一个 `.driver` 插件放进系统的 `/Library/Audio/Plug-Ins/HAL/` 目录，系统音频服务（coreaudiod）启动时会自动加载它，Mac 上就多出一个「VibePad Microphone」。这是 BlackHole、Loopback 等所有同类软件的同款技术路线，苹果官方支持。DriverKit 那条「新」路只给真实硬件用，苹果明确不给纯虚拟声卡发授权，不用考虑。
+- **形态**：做一个 `.driver` 插件放进系统的 `/Library/Audio/Plug-Ins/HAL/` 目录，系统音频服务（coreaudiod）启动时会自动加载它，Mac 上就多出一个「CodePad Microphone」。这是 BlackHole、Loopback 等所有同类软件的同款技术路线，苹果官方支持。DriverKit 那条「新」路只给真实硬件用，苹果明确不给纯虚拟声卡发授权，不用考虑。
 - **用什么语言写**：用 Objective-C（一个文件约一千多行）。Swift 理论上能写，但接口是 C 风格的函数指针表，用 Swift 要自己手工搭表、手工管引用计数，容易出错且没有先例可参考，不值得。
 - **签名要钱吗**：不要。我们现有的免费 Apple Development 证书就够用——驱动是由 Helper 自己拷贝进系统目录的，不经过浏览器的「隔离」检查，苹果对这条路径不强制 Developer ID 和公证。
 - **安装体验**：Helper 首次运行时弹一次 macOS 标准的管理员密码框（和装打印机驱动一样），授权后脚本自动把驱动放好、修好权限、重启音频服务（系统声音会断两三秒）。之后永远零操作。卸载在 Helper 设置里一键完成。
@@ -24,14 +24,14 @@
 ### 1.1 现状链路（要替换的部分）
 
 ```
-安卓平板 ──TCP──> VibePad Helper(AudioSink.swift, 24kHz→48kHz 立体声升采样)
+安卓平板 ──TCP──> CodePad Helper(AudioSink.swift, 24kHz→48kHz 立体声升采样)
                      │ AudioQueue 定向写
                      ▼
         TFFAudio 回环输出设备 (UID com.toofifi.audio.Loopback_v001)   ← 用户手动装的第三方驱动
                      │ 系统内回环
                      ▼
-        AggregateMicrophone.swift 建的聚合输入设备「VibePad Microphone」
-        (UID com.xiaoxi.vibepad.microphone)
+        AggregateMicrophone.swift 建的聚合输入设备「CodePad Microphone」
+        (UID com.xiaoxi.codepad.microphone)
                      ▼
               Typeless 等 App 当麦克风读
 ```
@@ -39,10 +39,10 @@
 ### 1.2 目标链路
 
 ```
-安卓平板 ──TCP──> VibePad Helper(AudioSink.swift，升采样逻辑原样保留)
+安卓平板 ──TCP──> CodePad Helper(AudioSink.swift，升采样逻辑原样保留)
                      │ AudioQueue 定向写（仅换 UID 常量）
                      ▼
-        VibePadAudio.driver（自研 HAL 插件，进程内环形缓冲区回环）
+        CodePadAudio.driver（自研 HAL 插件，进程内环形缓冲区回环）
           ├── 输出流：接收 Helper 写入的 PCM
           └── 输入流：把同一份数据暴露给任何 App 当麦克风读
                      ▼
@@ -60,7 +60,7 @@ AudioServerPlugIn 本质是 coreaudiod 进程内的一棵 CoreAudio 对象树，
 | 对象 | 数量 | 说明 |
 |---|---|---|
 | PlugIn | 1 | 根对象，负责 `CreateObject`/枚举设备，实现 COM 风格 `QueryInterface/AddRef/Release` |
-| Device | 1 | 名称「VibePad Microphone」，UID `com.xiaoxi.vibepad.audio.device`；报 `kAudioDevicePropertyDeviceIsAlive`、名义采样率等 |
+| Device | 1 | 名称「CodePad Microphone」，UID `com.xiaoxi.codepad.audio.device`；报 `kAudioDevicePropertyDeviceIsAlive`、名义采样率等 |
 | Stream（输出） | 1 | 接收 Helper 写入；`DoIOProc` 把客户端缓冲拷进环形缓冲 |
 | Stream（输入） | 1 | 供 App 读取；`DoIOProc` 从环形缓冲拷出，无数据时填静音 |
 | Control（可选） | 0–2 | 音量/静音控制。最小版可以不做，加了体验更好 |
@@ -73,11 +73,11 @@ AudioServerPlugIn 本质是 coreaudiod 进程内的一棵 CoreAudio 对象树，
 ### 1.4 安装与运行拓扑
 
 ```
-VibePad Helper.app
- └── Contents/Resources/VibePadAudio.driver   ← 构建时嵌入，随 App 一起签名
+CodePad Helper.app
+ └── Contents/Resources/CodePadAudio.driver   ← 构建时嵌入，随 App 一起签名
 
 首次运行：
- Helper 检测 /Library/Audio/Plug-Ins/HAL/VibePadAudio.driver 不存在或版本过旧
+ Helper 检测 /Library/Audio/Plug-Ins/HAL/CodePadAudio.driver 不存在或版本过旧
    → 弹一次管理员授权 → 以 root 执行安装脚本
    → mkdir/cp/chown root:wheel/chmod 755/去 quarantine/killall coreaudiod
    → coreaudiod 由 launchd 自动重启并加载插件 → 设备出现
@@ -136,10 +136,10 @@ VibePad Helper.app
 
 推荐 A 的具体设计：
 
-- Helper 启动时检测：`/Library/Audio/Plug-Ins/HAL/VibePadAudio.driver` 不存在，或 bundle 内 `CFBundleVersion` 低于 App 内嵌版本 → 触发安装流程。
+- Helper 启动时检测：`/Library/Audio/Plug-Ins/HAL/CodePadAudio.driver` 不存在，或 bundle 内 `CFBundleVersion` 低于 App 内嵌版本 → 触发安装流程。
 - 安装脚本（随 App 打包在 Resources，明文 shell 可读可审计，开源友好）以 root 执行：
   1. `mkdir -p /Library/Audio/Plug-Ins/HAL`
-  2. 用 `ditto`（保留权限）把 App 内嵌的 `VibePadAudio.driver` 拷入
+  2. 用 `ditto`（保留权限）把 App 内嵌的 `CodePadAudio.driver` 拷入
   3. `xattr -dr com.apple.quarantine` 去隔离
   4. `chown -R root:wheel` + `chmod -R 755`
   5. `killall coreaudiod`（launchd 自动拉起，音频中断约 2–3 秒，UI 上事先提示）
@@ -158,7 +158,7 @@ VibePad Helper.app
 
 ### 2.6 与现有代码的整合（问题 6）
 
-- `AudioSink.swift`：改动面 = 常量一行。`targetDeviceUID` 从 `com.toofifi.audio.Loopback_v001` 改为 `com.xiaoxi.vibepad.audio.device`；`targetOutputDeviceExists()` 等逻辑不用动。日志文案里的「TFFAudio」顺手改名。
+- `AudioSink.swift`：改动面 = 常量一行。`targetDeviceUID` 从 `com.toofifi.audio.Loopback_v001` 改为 `com.xiaoxi.codepad.audio.device`；`targetOutputDeviceExists()` 等逻辑不用动。日志文案里的「TFFAudio」顺手改名。
 - `AggregateMicrophone.swift`：**保留，改 UID**。`tffUID` 指向新驱动 UID。原因：文件头注释写明 Typeless 故意隐藏虚拟传输类型（`kAudioDeviceTransportTypeVirtual`）的设备、只认聚合输入设备——换成自研驱动后这个过滤大概率依旧生效（我们的设备同样是 virtual transport）。保留聚合层是零风险的兼容兜底。
 - 后续可做实验：驱动把 transport type 报成非 virtual 看 Typeless 是否直接认；若认，再发一个版本删掉 `AggregateMicrophone.swift`。此为优化项，不进首版范围。
 - 新增 `DriverInstaller.swift`（检测版本、调 osascript 提权、卸载入口），并在 `StatusCenter`/`SettingsWindow` 暴露「驱动状态/重新安装/卸载」。
@@ -170,22 +170,22 @@ VibePad Helper.app
 ```
 mac-helper/
 ├── Package.swift                      （不变）
-├── Sources/VibePadMacHelper/
+├── Sources/CodePadMacHelper/
 │   ├── AudioSink.swift                （改一行 UID + 文案）
 │   ├── AggregateMicrophone.swift      （改一行 UID）
 │   ├── DriverInstaller.swift          （新增：安装/卸载/版本检测）
 │   └── …
 └── Driver/
-    ├── VibePadAudio/
-    │   ├── VibePadAudioDriver.m       （插件全部实现）
+    ├── CodePadAudio/
+    │   ├── CodePadAudioDriver.m       （插件全部实现）
     │   └── Info.plist                 （CFPlugInFactories/CFPlugInTypes、版本号）
     ├── install-driver.sh              （提权执行的安装脚本，打包进 Resources）
     ├── uninstall-driver.sh
-    └── build-driver.sh                （clang -bundle 编译 → VibePadAudio.driver）
+    └── build-driver.sh                （clang -bundle 编译 → CodePadAudio.driver）
 ```
 
-- `build-driver.sh` 核心：`clang -bundle -fobjc-arc -O2 -mmacosx-version-min=12.0 -framework CoreFoundation -framework CoreAudio -o VibePadAudio.driver/Contents/MacOS/VibePadAudio VibePadAudioDriver.m`，再落 Info.plist。不引 Xcode 工程，保持仓库「无 Xcode 也能构建」的现状。
-- `release-vibepad.sh` 插入三步：`build-driver.sh` → 把 `VibePadAudio.driver` 和安装/卸载脚本拷进 `STAGED_HELPER/Contents/Resources/` → 现有 `codesign --deep` 自然覆盖新内容；designated requirement 校验逻辑不变。
+- `build-driver.sh` 核心：`clang -bundle -fobjc-arc -O2 -mmacosx-version-min=12.0 -framework CoreFoundation -framework CoreAudio -o CodePadAudio.driver/Contents/MacOS/CodePadAudio CodePadAudioDriver.m`，再落 Info.plist。不引 Xcode 工程，保持仓库「无 Xcode 也能构建」的现状。
+- `release-codepad.sh` 插入三步：`build-driver.sh` → 把 `CodePadAudio.driver` 和安装/卸载脚本拷进 `STAGED_HELPER/Contents/Resources/` → 现有 `codesign --deep` 自然覆盖新内容；designated requirement 校验逻辑不变。
 - SwiftPM 为什么不行：SwiftPM 没有「带自定义 Info.plist 与 C ABI 入口的 CFPlugIn bundle」目标类型；即便用 C target 编译出 dylib 也拼不出 bundle 目录结构。独立脚本反而更透明、可审计。
 
 ### 2.8 风险与测试（问题 8）
@@ -206,7 +206,7 @@ mac-helper/
 
 **回归验证清单**
 
-1. 干净用户首次运行 Helper → 一次密码框 → 「音频 MIDI 设置」出现 VibePad Microphone。
+1. 干净用户首次运行 Helper → 一次密码框 → 「音频 MIDI 设置」出现 CodePad Microphone。
 2. 平板端说话 → Typeless 经聚合设备转写成功（现状用例不变）。
 3. QuickTime/`afrecord` 直接从新设备录音，波形与平板输入一致，无爆音无漂移（连续 10 分钟）。
 4. Helper 重启、平板断连重连、Mac 睡眠唤醒后链路自动恢复。

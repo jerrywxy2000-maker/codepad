@@ -1,4 +1,4 @@
-package com.xiaoxi.vibepad.input
+package com.xiaoxi.codepad.input
 
 data class HelperHealth(
     val accessibilityTrusted: Boolean = false,

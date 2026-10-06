@@ -1,4 +1,4 @@
-package com.xiaoxi.vibepad.ui
+package com.xiaoxi.codepad.ui
 
 import android.content.Context
 import android.graphics.BitmapFactory
@@ -12,8 +12,8 @@ import android.view.MotionEvent
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.FrameLayout
 import android.widget.ImageView
-import com.xiaoxi.vibepad.input.TouchBarFrame
-import com.xiaoxi.vibepad.input.WifiInputSink
+import com.xiaoxi.codepad.input.TouchBarFrame
+import com.xiaoxi.codepad.input.WifiInputSink
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.RejectedExecutionException
@@ -136,7 +136,7 @@ class TouchBarStripView(
         isWindowAttached = true
         if (decodeExecutor == null || decodeExecutor?.isShutdown == true) {
             decodeExecutor = Executors.newSingleThreadExecutor { runnable ->
-                Thread(runnable, "VibePad-TouchBarDecode").apply { isDaemon = true }
+                Thread(runnable, "CodePad-TouchBarDecode").apply { isDaemon = true }
             }
         }
         syncSubscription()

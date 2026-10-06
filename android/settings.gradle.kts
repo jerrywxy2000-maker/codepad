@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "VibePad"
+rootProject.name = "CodePad"
 include(":app")

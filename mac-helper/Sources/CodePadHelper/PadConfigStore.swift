@@ -124,7 +124,7 @@ final class PadConfigStore {
         let base = FileManager.default
             .urls(for: .applicationSupportDirectory, in: .userDomainMask)
             .first ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support")
-        let directory = base.appendingPathComponent("VibePad", isDirectory: true)
+        let directory = base.appendingPathComponent("CodePad", isDirectory: true)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         fileURL = directory.appendingPathComponent("pad-config.json")
         if let data = try? Data(contentsOf: fileURL), let stored = PadConfig(payload: data) {
@@ -203,7 +203,7 @@ final class PadConfigStore {
         do {
             try data.write(to: fileURL, options: .atomic)
         } catch {
-            print("Could not persist VibePad pad config: \(error)")
+            print("Could not persist CodePad pad config: \(error)")
         }
     }
 }

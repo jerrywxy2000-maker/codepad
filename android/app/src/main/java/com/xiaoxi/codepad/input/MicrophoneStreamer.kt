@@ -1,4 +1,4 @@
-package com.xiaoxi.vibepad.input
+package com.xiaoxi.codepad.input
 
 import android.annotation.SuppressLint
 import android.media.AudioFormat
@@ -82,7 +82,7 @@ class MicrophoneStreamer(
                 Log.w(TAG, "Unable to acquire Wi-Fi low-latency lock", error)
             }
             sink.startAudio(id, SAMPLE_RATE, CHANNELS, FORMAT_PCM16_LE, FRAMES_PER_PACKET)
-            captureThread = Thread({ capture(candidate, id) }, "vibepad-mic-capture").apply {
+            captureThread = Thread({ capture(candidate, id) }, "codepad-mic-capture").apply {
                 isDaemon = true
                 start()
             }
@@ -167,7 +167,7 @@ class MicrophoneStreamer(
         const val STOP_REASON_LIFECYCLE = 1
         const val STOP_REASON_DISCONNECTED = 2
         const val STOP_REASON_CAPTURE_ERROR = 3
-        private const val TAG = "VibePadMicrophone"
+        private const val TAG = "CodePadMicrophone"
         private const val SAMPLE_RATE = 24_000
         private const val CHANNELS = 1
         private const val FORMAT_PCM16_LE = 1

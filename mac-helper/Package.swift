@@ -2,10 +2,10 @@
 import PackageDescription
 
 let package = Package(
-    name: "VibePadMacHelper",
+    name: "CodePadHelper",
     platforms: [.macOS(.v12)],
     products: [
-        .executable(name: "vibepad-mac-helper", targets: ["VibePadMacHelper"])
+        .executable(name: "codepad-mac-helper", targets: ["CodePadHelper"])
     ],
     targets: [
         .target(
@@ -19,7 +19,7 @@ let package = Package(
             ]
         ),
         .executableTarget(
-            name: "VibePadMacHelper",
+            name: "CodePadHelper",
             dependencies: ["TouchBarBridge"],
             linkerSettings: [
                 .linkedFramework("AVFoundation"),

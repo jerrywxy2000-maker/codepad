@@ -5,17 +5,17 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>zh_CN</string>
     <key>CFBundleDisplayName</key>
-    <string>VibePad Helper</string>
+    <string>CodePad Helper</string>
     <key>CFBundleExecutable</key>
-    <string>vibepad-mac-helper</string>
+    <string>codepad-mac-helper</string>
     <key>CFBundleIdentifier</key>
-    <string>com.xiaoxi.vibepad.helper</string>
+    <string>com.xiaoxi.codepad.helper</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>VibePad Helper</string>
+    <string>CodePad Helper</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>

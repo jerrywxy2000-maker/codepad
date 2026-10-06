@@ -40,7 +40,7 @@ typedef CGError (*WPDisplayStreamStopFn)(CGDisplayStreamRef);
 - (instancetype)init {
     self = [super init];
     if (self) {
-        _captureQueue = dispatch_queue_create("com.xiaoxi.vibepad.touchbar.capture", DISPATCH_QUEUE_SERIAL);
+        _captureQueue = dispatch_queue_create("com.xiaoxi.codepad.touchbar.capture", DISPATCH_QUEUE_SERIAL);
         mach_timebase_info(&_timebase);
     }
     return self;

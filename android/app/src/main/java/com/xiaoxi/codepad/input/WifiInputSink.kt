@@ -1,4 +1,4 @@
-package com.xiaoxi.vibepad.input
+package com.xiaoxi.codepad.input
 
 import android.content.Context
 import android.net.nsd.NsdManager
@@ -26,8 +26,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Low-latency LAN input transport. A Mac helper advertises [_vibepad._tcp.] with Bonjour;
- * VibePad discovers it, opens a TCP_NODELAY socket, and sends compact ordered binary frames.
+ * Low-latency LAN input transport. A Mac helper advertises [_codepad._tcp.] with Bonjour;
+ * CodePad discovers it, opens a TCP_NODELAY socket, and sends compact ordered binary frames.
  */
 class WifiInputSink(
     context: Context,
@@ -64,7 +64,7 @@ class WifiInputSink(
     private val nsd = appContext.getSystemService(Context.NSD_SERVICE) as NsdManager
     private val wifi = appContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
     private val io: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor { runnable ->
-        Thread(runnable, "vibepad-wifi-io").apply { isDaemon = true }
+        Thread(runnable, "codepad-wifi-io").apply { isDaemon = true }
     }
     private val connectInFlight = AtomicBoolean(false)
     private val queue = ArrayDeque<Event>()
@@ -334,7 +334,7 @@ class WifiInputSink(
     }
 
     private fun acquireMulticastLock() {
-        multicastLock = wifi?.createMulticastLock("vibepad-bonjour")?.apply {
+        multicastLock = wifi?.createMulticastLock("codepad-bonjour")?.apply {
             setReferenceCounted(false)
             acquire()
         }
@@ -432,7 +432,7 @@ class WifiInputSink(
                 Log.w(TAG, "Secure Wi-Fi reader stopped", error)
                 handleDisconnect(activeSocket)
             }
-        }, "vibepad-wifi-reader").apply { isDaemon = true; start() }
+        }, "codepad-wifi-reader").apply { isDaemon = true; start() }
     }
 
     private fun handleServerChallenge(payload: ByteArray) {
@@ -819,7 +819,7 @@ class WifiInputSink(
         if (highPerformanceLock?.isHeld == true) return
         highPerformanceLock = wifi?.createWifiLock(
             WifiManager.WIFI_MODE_FULL_HIGH_PERF,
-            "vibepad-low-latency",
+            "codepad-low-latency",
         )?.apply {
             setReferenceCounted(false)
             acquire()
@@ -866,8 +866,8 @@ class WifiInputSink(
     }
 
     companion object {
-        const val SERVICE_TYPE = "_vibepad._tcp."
-        private const val TAG = "VibePadWifi"
+        const val SERVICE_TYPE = "_codepad._tcp."
+        private const val TAG = "CodePadWifi"
         private const val MAGIC_1 = 0x57
         private const val MAGIC_2 = 0x50
         private const val PROTOCOL_VERSION = 2

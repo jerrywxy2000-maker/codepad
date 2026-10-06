@@ -1,25 +1,25 @@
 #!/bin/bash
-# install-driver.sh — install VibePadAudio.driver into the system HAL plug-in directory.
+# install-driver.sh — install CodePadAudio.driver into the system HAL plug-in directory.
 #
-# Executed as root (via osascript "with administrator privileges" from the VibePad helper app).
-# Usage: install-driver.sh /path/to/VibePadAudio.driver
+# Executed as root (via osascript "with administrator privileges" from the CodePad helper app).
+# Usage: install-driver.sh /path/to/CodePadAudio.driver
 #
 # Idempotent: an existing installation is replaced. On any failure before the final swap the
 # previous installation is left untouched; a failed swap restores it.
 
 set -euo pipefail
 
-readonly DRIVER_NAME="VibePadAudio.driver"
+readonly DRIVER_NAME="CodePadAudio.driver"
 readonly HAL_DIR="/Library/Audio/Plug-Ins/HAL"
 readonly TARGET="$HAL_DIR/$DRIVER_NAME"
 
 SOURCE="${1:-}"
 if [ -z "$SOURCE" ] || [ ! -d "$SOURCE" ]; then
-    echo "install-driver.sh: usage: install-driver.sh /path/to/VibePadAudio.driver" >&2
+    echo "install-driver.sh: usage: install-driver.sh /path/to/CodePadAudio.driver" >&2
     exit 64 # EX_USAGE
 fi
-if [ ! -x "$SOURCE/Contents/MacOS/VibePadAudio" ] || [ ! -f "$SOURCE/Contents/Info.plist" ]; then
-    echo "install-driver.sh: $SOURCE is not a valid VibePadAudio.driver bundle" >&2
+if [ ! -x "$SOURCE/Contents/MacOS/CodePadAudio" ] || [ ! -f "$SOURCE/Contents/Info.plist" ]; then
+    echo "install-driver.sh: $SOURCE is not a valid CodePadAudio.driver bundle" >&2
     exit 65 # EX_DATAERR
 fi
 if [ "$(id -u)" -ne 0 ]; then

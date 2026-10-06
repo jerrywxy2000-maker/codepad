@@ -1,4 +1,4 @@
-package com.xiaoxi.vibepad.input
+package com.xiaoxi.codepad.input
 
 import android.content.Context
 import android.security.keystore.KeyProperties
@@ -20,7 +20,7 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 
 class PairingStore(context: Context) {
-    private val prefs = context.getSharedPreferences("vibepad_pairing", Context.MODE_PRIVATE)
+    private val prefs = context.getSharedPreferences("codepad_pairing", Context.MODE_PRIVATE)
     private val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
 
     val clientId: ByteArray
@@ -45,7 +45,7 @@ class PairingStore(context: Context) {
 
     fun hmac(data: ByteArray): ByteArray {
         val key = keyStore.getKey(keyAlias(), null) as? SecretKey
-            ?: throw IllegalStateException("No VibePad pairing key")
+            ?: throw IllegalStateException("No CodePad pairing key")
         return Mac.getInstance("HmacSHA256").run {
             init(key)
             doFinal(data)
@@ -56,7 +56,7 @@ class PairingStore(context: Context) {
         if (keyStore.containsAlias(keyAlias())) keyStore.deleteEntry(keyAlias())
     }
 
-    private fun keyAlias() = "vibepad_pairing_${clientId.toHex()}"
+    private fun keyAlias() = "codepad_pairing_${clientId.toHex()}"
 
     private companion object {
         const val PREF_CLIENT_ID = "client_id"
@@ -93,9 +93,9 @@ class PairingExchange(private val clientId: ByteArray) {
         }
         val transcript = clientId + clientPublicKey + serverPublic
         val salt = sha256(transcript)
-        val secret = hkdf(shared, salt, "VibePad pairing v2".toByteArray(), 32)
+        val secret = hkdf(shared, salt, "CodePad pairing v2".toByteArray(), 32)
         derivedSecret = secret
-        val codeBytes = softwareHmac(secret, "VibePad SAS".toByteArray() + transcript)
+        val codeBytes = softwareHmac(secret, "CodePad SAS".toByteArray() + transcript)
         val number = ((codeBytes[0].toLong() and 0xff) shl 24 or
             ((codeBytes[1].toLong() and 0xff) shl 16) or
             ((codeBytes[2].toLong() and 0xff) shl 8) or

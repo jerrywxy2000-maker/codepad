@@ -1,4 +1,4 @@
-package com.xiaoxi.vibepad
+package com.xiaoxi.codepad
 
 import android.Manifest
 import android.app.Activity
@@ -20,26 +20,26 @@ import android.widget.SeekBar
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
-import com.xiaoxi.vibepad.input.InputSink
-import com.xiaoxi.vibepad.input.HelperHealth
-import com.xiaoxi.vibepad.input.HidModifiers
-import com.xiaoxi.vibepad.input.MicrophoneStreamer
-import com.xiaoxi.vibepad.input.RemoteApp
-import com.xiaoxi.vibepad.input.RemoteDataListener
-import com.xiaoxi.vibepad.input.TouchBarFrame
-import com.xiaoxi.vibepad.input.WifiInputSink
-import com.xiaoxi.vibepad.ui.NoOpInputSink
-import com.xiaoxi.vibepad.ui.PadConfig
-import com.xiaoxi.vibepad.ui.PadConfigStore
-import com.xiaoxi.vibepad.ui.PadLayout
-import com.xiaoxi.vibepad.ui.SkinTheme
-import com.xiaoxi.vibepad.ui.VibePadView
-import com.xiaoxi.vibepad.system.KioskController
+import com.xiaoxi.codepad.input.InputSink
+import com.xiaoxi.codepad.input.HelperHealth
+import com.xiaoxi.codepad.input.HidModifiers
+import com.xiaoxi.codepad.input.MicrophoneStreamer
+import com.xiaoxi.codepad.input.RemoteApp
+import com.xiaoxi.codepad.input.RemoteDataListener
+import com.xiaoxi.codepad.input.TouchBarFrame
+import com.xiaoxi.codepad.input.WifiInputSink
+import com.xiaoxi.codepad.ui.NoOpInputSink
+import com.xiaoxi.codepad.ui.PadConfig
+import com.xiaoxi.codepad.ui.PadConfigStore
+import com.xiaoxi.codepad.ui.PadLayout
+import com.xiaoxi.codepad.ui.SkinTheme
+import com.xiaoxi.codepad.ui.CodePadView
+import com.xiaoxi.codepad.system.KioskController
 
 class MainActivity : Activity() {
     private val configStore: PadConfigStore by lazy { PadConfigStore.get(this) }
     private var inputSink: InputSink = NoOpInputSink
-    private var vibePadView: VibePadView? = null
+    private var vibePadView: CodePadView? = null
     private var wifiSink: WifiInputSink? = null
     private var microphoneStreamer: MicrophoneStreamer? = null
     private var kioskController: KioskController? = null
@@ -60,11 +60,11 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         kioskController = KioskController(this).also { it.start() }
-        vibePadView = VibePadView(
+        vibePadView = CodePadView(
             context = this,
             sinkProvider = { inputSink },
             touchBarSinkProvider = { wifiSink },
-            onSettingsClick = ::showVibePadSettings,
+            onSettingsClick = ::showCodePadSettings,
             onMicrophonePressStart = ::beginMicrophonePress,
             onMicrophonePressEnd = ::endMicrophonePress,
         ).also(::setContentView)
@@ -128,7 +128,7 @@ class MainActivity : Activity() {
                 @Suppress("DEPRECATION")
                 WifiManager.WIFI_MODE_FULL_HIGH_PERF
             }
-            manager.createWifiLock(mode, "vibepad:mic").apply { setReferenceCounted(false) }
+            manager.createWifiLock(mode, "codepad:mic").apply { setReferenceCounted(false) }
         } catch (_: Exception) {
             null
         }
@@ -281,7 +281,7 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun showVibePadSettings() {
+    private fun showCodePadSettings() {
         val density = resources.displayMetrics.density
         fun dp(value: Int) = (value * density + 0.5f).toInt()
         val config = configStore.current()
@@ -301,7 +301,7 @@ class MainActivity : Activity() {
                 isAllCaps = false
                 text = if (wifiSink?.isPaired == true) "重新配对这台平板" else "配对这台平板"
                 setOnClickListener {
-                    showPairingInstructions("请先点 Mac 菜单栏的 VibePad 图标，选择“允许配对新平板（60 秒）”，然后点下方继续。")
+                    showPairingInstructions("请先点 Mac 菜单栏的 CodePad 图标，选择“允许配对新平板（60 秒）”，然后点下方继续。")
                 }
             }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(42)).apply {
                 bottomMargin = dp(4)
@@ -328,7 +328,7 @@ class MainActivity : Activity() {
                 maximum = PadConfig.SCROLL_MAX,
             ) { value -> configStore.update { it.copy(scrollSensitivity = value) } })
             addView(TextView(this@MainActivity).apply {
-                text = "以上设置会同步到 Mac Helper，也可以在 Mac 菜单栏的「VibePad 设置…」里改。"
+                text = "以上设置会同步到 Mac Helper，也可以在 Mac 菜单栏的「CodePad 设置…」里改。"
                 textSize = 11f
                 alpha = 0.65f
                 setPadding(0, dp(2), 0, dp(6))
@@ -351,10 +351,10 @@ class MainActivity : Activity() {
             })
         }
         val dialog = AlertDialog.Builder(this)
-            .setTitle("VibePad 设置")
+            .setTitle("CodePad 设置")
             .setView(ScrollView(this).apply { addView(content) })
             .setPositiveButton("完成", null)
-            .setNegativeButton("退出 VibePad") { _, _ -> showExitConfirmation() }
+            .setNegativeButton("退出 CodePad") { _, _ -> showExitConfirmation() }
             .create()
         dialog.setOnShowListener {
             dialog.window?.decorView?.systemUiVisibility = DIALOG_IMMERSIVE_FLAGS
@@ -544,7 +544,7 @@ class MainActivity : Activity() {
 
     private fun showExitConfirmation() {
         AlertDialog.Builder(this)
-            .setTitle("退出 VibePad？")
+            .setTitle("退出 CodePad？")
             .setMessage("将中断触控和键盘连接，并恢复安卓系统栏。")
             .setPositiveButton("确认退出") { _, _ ->
                 microphonePressHeld = false
@@ -563,7 +563,7 @@ class MainActivity : Activity() {
         kioskController?.onWindowFocusChanged(hasFocus)
     }
 
-    @Deprecated("Back is intentionally disabled in VibePad kiosk mode")
+    @Deprecated("Back is intentionally disabled in CodePad kiosk mode")
     override fun onBackPressed() = Unit
 
     override fun onPause() {

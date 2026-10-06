@@ -1,7 +1,7 @@
-# VibePad Mac Helper
+# CodePad Mac Helper
 
-VibePad 的原生 macOS 接收端，以菜单栏图标形式常驻。它通过 Bonjour 广播
-`_vibepad._tcp.`，监听 TCP `39876`（可用环境变量 `VIBEPAD_PORT` 覆盖），
+CodePad 的原生 macOS 接收端，以菜单栏图标形式常驻。它通过 Bonjour 广播
+`_codepad._tcp.`，监听 TCP `39876`（可用环境变量 `VIBEPAD_PORT` 覆盖），
 启用 `TCP_NODELAY`，并通过 CoreGraphics 注入鼠标、滚轮、键盘与系统手势事件。
 可选功能：Touch Bar 画面回传（依赖私有 DFR API，动态解析，不可用时自动跳过）
 和平板麦克风直通（依赖 TFFAudio 虚拟声卡）。
@@ -11,23 +11,23 @@ VibePad 的原生 macOS 接收端，以菜单栏图标形式常驻。它通过 B
 ```bash
 cd mac-helper
 swift build -c release
-.build/release/vibepad-mac-helper
+.build/release/codepad-mac-helper
 ```
 
 首次启动会提示缺少“辅助功能”权限：系统设置 → 隐私与安全性 → 辅助功能，
-启用 VibePad Helper（或直接运行时的 Terminal），然后重启 helper。若 macOS 询问
+启用 CodePad Helper（或直接运行时的 Terminal），然后重启 helper。若 macOS 询问
 是否允许传入网络连接，请选择“允许”。正式安装请使用仓库根目录的
-`scripts/release-vibepad.sh`，它会打包 App bundle、签名并注册 LaunchAgent。
+`scripts/release-codepad.sh`，它会打包 App bundle、签名并注册 LaunchAgent。
 
 ## 应用签名（重要）
 
-安装到 `~/Applications/VibePad Helper.app` 的版本必须使用一个**固定的**
+安装到 `~/Applications/CodePad Helper.app` 的版本必须使用一个**固定的**
 Apple Development 签名身份：
 
 ```bash
 codesign --force --deep --options runtime --timestamp=none \
   --sign "Apple Development: you@example.com (TEAMID1234)" \
-  "$HOME/Applications/VibePad Helper.app"
+  "$HOME/Applications/CodePad Helper.app"
 ```
 
 不要使用 ad-hoc 签名（`--sign -`）。ad-hoc 的 designated requirement 绑定每次
@@ -37,18 +37,18 @@ codesign --force --deep --options runtime --timestamp=none \
 ## 麦克风直通依赖
 
 `AudioSink.swift` 把平板音频定向写入 UID 为 `com.toofifi.audio.Loopback_v001`
-的 TFFAudio 回环输出设备，并在启动时确保存在名为「VibePad Microphone」的公开
-Aggregate 输入设备（UID `com.xiaoxi.vibepad.microphone`），供 Typeless 选择。
+的 TFFAudio 回环输出设备，并在启动时确保存在名为「CodePad Microphone」的公开
+Aggregate 输入设备（UID `com.xiaoxi.codepad.microphone`），供 Typeless 选择。
 未安装 TFFAudio 时 Helper 会打印 `TFFAudio was not found`，其余功能不受影响。
 
 ## 配对与认证（协议 v2）
 
 - 菜单栏点“允许配对新平板（60 秒）”打开配对窗口；平板发起 `PAIR_REQUEST` 后，
   菜单栏显示 6 位验证码，与平板一致时在 Mac 上点“允许”。
-- 密钥由临时 P-256 ECDH 经 HKDF-SHA256 派生（info `VibePad pairing v2`），
-  验证码为 `HMAC(secret, "VibePad SAS" || transcript)` 前 4 字节模 10⁶。
+- 密钥由临时 P-256 ECDH 经 HKDF-SHA256 派生（info `CodePad pairing v2`），
+  验证码为 `HMAC(secret, "CodePad SAS" || transcript)` 前 4 字节模 10⁶。
 - 每台平板的密钥以 clientId 为账户名存入 Keychain（service
-  `com.xiaoxi.vibepad.pairing.v2`），“清除所有配对”会删除全部条目。
+  `com.xiaoxi.codepad.pairing.v2`），“清除所有配对”会删除全部条目。
 - 重连时 Mac 先发 32 字节随机 `SERVER_CHALLENGE`；平板回复
   `clientId(16) || clientNonce(32) || HMAC(secret, "client-auth" || serverNonce || clientNonce || clientId)`；
   Mac 校验后回复 `HMAC(secret, "server-auth" || ...)`。任一方校验失败即断开。
@@ -61,14 +61,14 @@ HID Keyboard/Keypad usage；helper 负责将其映射为 macOS virtual keycode�
 
 ## 菜单栏设置窗口（3.5.0 起）
 
-菜单栏图标里新增「VibePad 设置…」，可以直接在 Mac 上配置平板界面，不必只在平板上改：
+菜单栏图标里新增「CodePad 设置…」，可以直接在 Mac 上配置平板界面，不必只在平板上改：
 
 - 布局：经典 / 深空专业 / 双手操控（对应 `designs/skins/` 的 01 / 02 / 05）；
 - 配色：经典黑 / 深空灰 / 暖钛浅 / 深夜蓝 / 墨绿 / 暗紫 / 跟随 Mac；
 - 常用 App：3 × 3 下拉框，顺序即平板显示顺序，可留空；
 - 鼠标与滚动灵敏度。
 
-配置存放在 `~/Library/Application Support/VibePad/pad-config.json`，通过
+配置存放在 `~/Library/Application Support/CodePad/pad-config.json`，通过
 `0x60 CONFIG_REQUEST` / `0x61 CONFIG` / `0x62 CONFIG_UPDATE` 三个帧与平板双向同步，
 `revision` 大的一方胜出。字段定义见 `PadConfigStore.swift` 与平板端的 `PadConfig.kt`。
 
@@ -121,5 +121,5 @@ HID Keyboard/Keypad usage；helper 负责将其映射为 macOS virtual keycode�
 
 `Tests/MenuBarSchedulingProbe.swift` 不属于任何 SwiftPM target，用于手动验证
 菜单栏在真实 AppKit 主循环下能收到网络线程投递的验证码：把它与
-`Sources/VibePadMacHelper/PairingSecurity.swift`、`StatusCenter.swift` 一起用
+`Sources/CodePadMacHelper/PairingSecurity.swift`、`StatusCenter.swift` 一起用
 `swiftc` 编译运行，期望输出 `MENU_TITLE=验证码 482  731` 且退出码 0。

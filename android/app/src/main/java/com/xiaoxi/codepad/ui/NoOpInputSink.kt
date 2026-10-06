@@ -1,6 +1,6 @@
-package com.xiaoxi.vibepad.ui
+package com.xiaoxi.codepad.ui
 
-import com.xiaoxi.vibepad.input.InputSink
+import com.xiaoxi.codepad.input.InputSink
 
 /** Safe placeholder used until the Wi-Fi transport is attached. */
 object NoOpInputSink : InputSink {

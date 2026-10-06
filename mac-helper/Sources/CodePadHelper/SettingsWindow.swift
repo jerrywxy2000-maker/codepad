@@ -1,6 +1,6 @@
 import AppKit
 
-/// Mac 菜单栏「VibePad 设置…」窗口：在电脑上直接改平板的界面皮肤、顶部区域、
+/// Mac 菜单栏「CodePad 设置…」窗口：在电脑上直接改平板的界面皮肤、顶部区域、
 /// 常用 App 与触控灵敏度。改动写进 PadConfigStore，由服务端推给已连接的平板。
 @MainActor
 final class SettingsWindowController: NSObject, NSWindowDelegate {
@@ -112,7 +112,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
         content.addArrangedSubview(separator())
         content.addArrangedSubview(sectionTitle("麦克风驱动"))
-        content.addArrangedSubview(hint("安装后平板即可作为 Mac 的麦克风：在 Typeless 等录音 App 里选择「VibePad Microphone」。"))
+        content.addArrangedSubview(hint("安装后平板即可作为 Mac 的麦克风：在 Typeless 等录音 App 里选择「CodePad Microphone」。"))
         driverButton.target = self
         driverButton.action = #selector(driverButtonClicked)
         driverButton.bezelStyle = .rounded
@@ -143,7 +143,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "VibePad 设置"
+        window.title = "CodePad 设置"
         window.contentView = content
         window.delegate = self
         window.isReleasedWhenClosed = false
@@ -298,7 +298,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         uninstallDriverButton.isEnabled = !driverBusy
         guard !driverBusy else { return }
         driverStatusLabel.stringValue = installed
-            ? "已安装。录音 App 里选择「VibePad Microphone」即可收音。"
+            ? "已安装。录音 App 里选择「CodePad Microphone」即可收音。"
             : (DriverInstaller.bundledDriverAvailable ? "未安装。" : "安装包内缺少驱动文件。")
     }
 
@@ -316,7 +316,7 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     @objc private func uninstallDriverClicked() {
         let alert = NSAlert()
         alert.messageText = "卸载麦克风驱动？"
-        alert.informativeText = "卸载后平板麦克风功能不可用，「VibePad Microphone」会从 Mac 上消失。"
+        alert.informativeText = "卸载后平板麦克风功能不可用，「CodePad Microphone」会从 Mac 上消失。"
         alert.addButton(withTitle: "卸载")
         alert.addButton(withTitle: "取消")
         guard alert.runModal() == .alertFirstButtonReturn else { return }

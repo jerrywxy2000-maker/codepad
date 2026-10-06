@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.xiaoxi.vibepad"
+    namespace = "com.xiaoxi.codepad"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.xiaoxi.vibepad"
+        applicationId = "com.xiaoxi.codepad"
         minSdk = 28
         targetSdk = 28
         versionCode = 16
