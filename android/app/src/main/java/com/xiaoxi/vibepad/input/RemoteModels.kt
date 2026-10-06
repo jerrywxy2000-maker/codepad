@@ -9,6 +9,11 @@ data class HelperHealth(
     val modifiers: Int = 0,
     /** Mac 当前前台 App 的 bundle id，用于高亮常用 App；未知时为 null。 */
     val frontmostApp: String? = null,
+    /**
+     * Mac 当前系统外观：`"dark"` / `"light"`，未知时为 null。
+     * 只在配色选了「跟随 Mac」时用到，属于运行时状态，不参与配置同步。
+     */
+    val macAppearance: String? = null,
 ) {
     val inputUsable: Boolean
         get() = accessibilityTrusted && protocolVersion == 2

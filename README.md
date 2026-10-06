@@ -128,9 +128,11 @@ scripts/release-vibepad.sh --install  # 并安装到本机 ~/Applications 与已
 脚本在签名身份缺失时直接停止，绝不回退 ad-hoc 签名。`JAVA_HOME`、`ANDROID_HOME`、
 `VIBEPAD_INSTALL_DIR` 均可用环境变量覆盖。
 
-配置同步：界面皮肤、常用 App 和触控灵敏度可以在 Mac 菜单栏的「VibePad 设置…」
+配置同步：界面布局、配色、常用 App 和触控灵敏度可以在 Mac 菜单栏的「VibePad 设置…」
 里配置，两端通过 `0x60/0x61/0x62` 三个帧双向同步，Mac 侧存在
-`~/Library/Application Support/VibePad/pad-config.json`。
+`~/Library/Application Support/VibePad/pad-config.json`。布局与配色是两个独立维度，
+可自由组合；配色选「跟随 Mac」时，实际明暗由 `0x21 PONG` 心跳里的 `appearance`
+字段下发（属于运行时状态，不写进配置）。
 
 ### 安全边界
 

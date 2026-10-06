@@ -27,13 +27,30 @@ struct PadShortcut: Equatable {
 }
 
 struct PadConfig: Equatable {
-    static let skins = ["classic", "graphite", "titanium"]
-    static let skinNames = ["classic": "经典", "graphite": "深空专业", "titanium": "双手操控"]
+    /// 布局维度：3 种排布，与配色独立组合。
+    static let layouts = ["classic", "graphite", "titanium"]
+    static let layoutNames = ["classic": "经典", "graphite": "深空专业", "titanium": "双手操控"]
+    /// 配色维度：可自由扩充，`auto` 表示跟随 Mac 系统外观。
+    static let themes = ["classic", "graphite", "titanium", "midnight", "forest", "violet", "auto"]
+    static let themeNames = [
+        "classic": "经典黑",
+        "graphite": "深空灰",
+        "titanium": "暖钛浅",
+        "midnight": "深夜蓝",
+        "forest": "墨绿",
+        "violet": "暗紫",
+        "auto": "跟随 Mac",
+    ]
     static let maxApps = 9
     static let maxShortcuts = 12
 
     var revision: Int = 0
-    var skin: String = "classic"
+    var layout: String = "classic"
+    var theme: String = "classic"
+    /// 对端是否显式声明了 layout/theme。旧版对端只发 `skin`，缺失是「不关心」
+    /// 而非「设为默认」，详见 `PadConfigStore.accept` 里的合并逻辑。
+    /// 不参与 `sameContent`：它描述来源而非内容，算进去会让同一份数据反复回推。
+    var explicitAppearance: Bool = true
     var apps: [String] = []
     var shortcuts: [PadShortcut] = []
     var mouseSensitivity: Double = 1
@@ -41,7 +58,8 @@ struct PadConfig: Equatable {
 
     /// revision 之外的内容是否相同：相同就不必回推，也不必重建平板界面。
     func sameContent(as other: PadConfig) -> Bool {
-        skin == other.skin &&
+        layout == other.layout &&
+            theme == other.theme &&
             apps == other.apps &&
             shortcuts == other.shortcuts &&
             mouseSensitivity == other.mouseSensitivity &&
@@ -51,7 +69,11 @@ struct PadConfig: Equatable {
     var json: [String: Any] {
         [
             "revision": revision,
-            "skin": skin,
+            "layout": layout,
+            "theme": theme,
+            // 旧版平板只认 skin 字段，写成布局 id 以保持兼容：
+            // 旧版收到后会套用同名旧皮肤，等价于「布局 + 该布局默认配色」。
+            "skin": layout,
             "apps": apps,
             "shortcuts": shortcuts.map(\.json),
             "mouseSensitivity": mouseSensitivity,
@@ -68,8 +90,14 @@ struct PadConfig: Equatable {
             return nil
         }
         revision = object["revision"] as? Int ?? 0
-        let skin = object["skin"] as? String ?? "classic"
-        self.skin = PadConfig.skins.contains(skin) ? skin : "classic"
+        // layout/theme 缺失时回退到旧的 skin 字段，仅作兜底展示值；
+        // 是否真的覆盖本地，由 explicitAppearance 在 accept 里决定。
+        let legacySkin = object["skin"] as? String
+        let layout = object["layout"] as? String ?? legacySkin ?? "classic"
+        self.layout = PadConfig.layouts.contains(layout) ? layout : "classic"
+        let theme = object["theme"] as? String ?? legacySkin ?? "classic"
+        self.theme = PadConfig.themes.contains(theme) ? theme : "classic"
+        explicitAppearance = object["layout"] != nil || object["theme"] != nil
         apps = ((object["apps"] as? [Any]) ?? [])
             .compactMap { $0 as? String }
             .filter { !$0.isEmpty }
@@ -131,12 +159,19 @@ final class PadConfigStore {
     func accept(_ incoming: PadConfig, from session: UUID?) -> PadConfig {
         lock.lock()
         let previous = config
-        let accepted = incoming.revision >= previous.revision && !incoming.sameContent(as: previous)
+        // 旧版对端只发 skin，没有 layout/theme：缺失是「不关心」而非「设为默认」。
+        // 保留本地布局与配色，否则新版配好的深夜蓝会被旧版静默改回经典黑。
+        var candidate = incoming
+        if !incoming.explicitAppearance {
+            candidate.layout = previous.layout
+            candidate.theme = previous.theme
+        }
+        let accepted = candidate.revision >= previous.revision && !candidate.sameContent(as: previous)
         if accepted {
-            config = incoming
-        } else if incoming.revision > previous.revision {
+            config = candidate
+        } else if candidate.revision > previous.revision {
             // 内容一致但对方 revision 更高：对齐编号，避免两端反复互推同一份配置。
-            config.revision = incoming.revision
+            config.revision = candidate.revision
         }
         let current = config
         lock.unlock()

@@ -40,10 +40,13 @@ HANDOFF.md、QA.md）。改 02/05 时优先编辑 `orbit-source/src/selected-fra
 
 | 设计 | App 内名称 | 实现 |
 | --- | --- | --- |
-| 01 经典黑 | 经典 | `Skin.CLASSIC`，配色与布局沿用 0.4.1 已上线版本 |
-| 02 深空专业 | 深空专业 | `Skin.GRAPHITE` |
-| 05 双手操控 | 双手操控 | `Skin.TITANIUM` |
+| 01 经典黑 | 经典 | `PadLayout.CLASSIC` + `SkinTheme.CLASSIC`，沿用 0.4.1 已上线版本 |
+| 02 深空专业 | 深空专业 | `PadLayout.GRAPHITE` + `SkinTheme.GRAPHITE` |
+| 05 双手操控 | 双手操控 | `PadLayout.TITANIUM` + `SkinTheme.TITANIUM` |
 
-色板在 `android/app/src/main/java/com/xiaoxi/vibepad/ui/Skin.kt`，布局在同目录的
+布局与配色在实现上已拆成两个独立维度（`PadLayout` 决定排布，`SkinTheme` 决定色板），
+三套设计只是它们的默认组合；额外配色 `midnight` 深夜蓝 / `forest` 墨绿 / `violet` 暗紫 /
+`auto` 跟随 Mac 外观可与任意布局搭配。色板在
+`android/app/src/main/java/com/xiaoxi/vibepad/ui/Skin.kt`，布局在同目录的
 `VibePadView.kt`。原型里本项目做不到的元素（固定 Touch Bar 标签、亮度/音量滑杆、
 Coding/日常模式、文字输入弹层、演示转写）按交接约定不实现。

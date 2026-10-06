@@ -11,9 +11,10 @@ minSdk 28）。通过 Bonjour 发现 VibePad Mac Helper，建立认证 TCP 连�
 - 传输、配对与认证（`input/WifiInputSink.kt`、`input/PairingSecurity.kt`），
   配对密钥保存在 Android Keystore。
 
-内置三套皮肤（`classic` 经典黑 / `graphite` 深空专业 / `titanium` 双手操控），
-在设置弹层切换，皮肤只改配色与布局，协议与手势语义共享，见 `ui/Skin.kt`。
-皮肤、顶栏模式、常用 App、自定义快捷键与指针/滚动灵敏度配置在 `ui/PadConfig.kt`，
+在设置弹层切换布局（`classic` 经典 / `graphite` 深空专业 / `titanium` 双手操控）与配色
+（`classic`/`graphite`/`titanium`/`midnight` 深夜蓝/`forest` 墨绿/`violet` 暗紫/`auto` 跟随 Mac），
+两个维度独立组合，只改配色与布局，协议与手势语义共享，见 `ui/Skin.kt`。
+布局、配色、顶栏模式、常用 App、自定义快捷键与指针/滚动灵敏度配置在 `ui/PadConfig.kt`，
 与 Mac Helper 通过 `0x60`/`0x61`/`0x62` 帧双向同步，revision 大者生效。
 
 ## 构建

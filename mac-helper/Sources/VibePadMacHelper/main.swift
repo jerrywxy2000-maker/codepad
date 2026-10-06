@@ -302,7 +302,17 @@ private final class InputInjector {
             "modifiers": Int(heldModifiers),
         ]
         if let frontmost = FrontmostAppTracker.shared.bundleID { object["frontmostApp"] = frontmost }
+        object["appearance"] = Self.systemAppearance()
         return (try? JSONSerialization.data(withJSONObject: object)) ?? Data()
+    }
+
+    /// 当前 macOS 系统外观（`dark` / `light`），供平板「跟随 Mac」配色使用。
+    ///
+    /// 用 `UserDefaults` 而非 `NSApp.effectiveAppearance`：后者必须在主线程读取，
+    /// 而 `healthPayload()` 在网络队列上执行。`AppleInterfaceStyle` 由系统写入、
+    /// 任意线程可读，切外观后下一次心跳即可生效。
+    private static func systemAppearance() -> String {
+        UserDefaults.standard.string(forKey: "AppleInterfaceStyle") == "Dark" ? "dark" : "light"
     }
 
     /// 供菜单栏状态面板使用；允许从其他线程调用，且不会阻塞在 `queue` 上。

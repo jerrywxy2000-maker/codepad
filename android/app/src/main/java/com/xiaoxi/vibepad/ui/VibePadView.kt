@@ -37,15 +37,15 @@ import com.xiaoxi.vibepad.input.WifiInputSink
 import java.util.Locale
 
 /**
- * 平板主界面。三套皮肤共用同一组组件与协议，只改变布局与色板：
+ * 平板主界面。布局与配色是两个独立维度，可自由组合：
  *
- * 三套皮肤顶行一致（01 经典黑排布：左侧状态图标，右侧整行 Touch Bar），身体部分：
+ * 三套布局顶行一致（01 经典黑排布：左侧状态图标，右侧整行 Touch Bar），身体部分：
  *
- * - [Skin.CLASSIC] 01 经典黑：左控制面板、右触控板。
- * - [Skin.GRAPHITE] 02 深空专业：左触控右快捷键、底部 App Dock。
- * - [Skin.TITANIUM] 05 双手操控：左 App 与编辑键、中央触控、右快捷键。
+ * - [PadLayout.CLASSIC] 01 经典黑：左控制面板、右触控板。
+ * - [PadLayout.GRAPHITE] 02 深空专业：左触控右快捷键、底部 App Dock。
+ * - [PadLayout.TITANIUM] 05 双手操控：左 App 与编辑键、中央触控、右快捷键。
  *
- * 手势语义、键位功能、Typeless 按住说话与发送行为在三套皮肤里完全一致。
+ * 手势语义、键位功能、Typeless 按住说话与发送行为在所有皮肤里完全一致。
  */
 class VibePadView(
     context: Context,
@@ -62,7 +62,8 @@ class VibePadView(
     private val appCatalog = mutableListOf<RemoteApp>()
 
     private var config = store.current()
-    private var palette = config.skin.palette
+    private var macAppearance: String? = null
+    private var palette = config.theme.resolve(macAppearance)
     private var helperHealth = HelperHealth()
     private var microphoneState = MicrophoneStreamer.State.IDLE
     private var frontmostBundleId: String? = null
@@ -101,15 +102,19 @@ class VibePadView(
     }
 
     fun setHelperHealth(health: HelperHealth) {
+        val appearanceChanged = health.macAppearance != macAppearance
         helperHealth = health
+        macAppearance = health.macAppearance
         systemBar.setHealth(health)
         setFrontmostApp(health.frontmostApp)
+        // 「跟随 Mac」配色依赖 Helper 心跳下发的系统外观；外观变了才重建，避免每帧刷界面。
+        if (appearanceChanged && config.theme == SkinTheme.AUTO) applyTheme()
     }
 
     /** 可能来自网络线程；解码永远不在主线程执行。 */
     fun setTouchBarFrame(frame: TouchBarFrame) = touchBarStrip.setTouchBarFrame(frame)
 
-    fun currentSkin(): Skin = config.skin
+    fun currentLayout(): PadLayout = config.layout
 
     /** Mac 前台 App，用于高亮当前 App；未知时不高亮。 */
     fun setFrontmostApp(bundleId: String?) {
@@ -165,15 +170,26 @@ class VibePadView(
 
     /** 应用一份配置（本地修改或 Mac 推来的都走这里）。 */
     fun applyConfig(updated: PadConfig) {
-        val skinChanged = updated.skin != config.skin
+        val layoutChanged = updated.layout != config.layout
+        val themeChanged = updated.theme != config.theme
         config = updated
-        palette = updated.skin.palette
-        if (skinChanged) {
-            buildLayout()
-        } else {
-            renderApps()
-            renderCustomShortcuts()
+        when {
+            // 布局改变需要重建整个控件树；配色改变只需重刷已有控件。
+            layoutChanged || themeChanged -> applyTheme()
+            else -> {
+                renderApps()
+                renderCustomShortcuts()
+            }
         }
+    }
+
+    /**
+     * 按当前配色重建界面。[buildLayout] 会重新套用 [palette.background]、
+     * trackpad 与 systemBar 的色板，因此配色改变与布局改变走同一条路径。
+     */
+    private fun applyTheme() {
+        palette = config.theme.resolve(macAppearance)
+        buildLayout()
     }
 
     // endregion
@@ -206,10 +222,10 @@ class VibePadView(
         systemBar = createSystemBar()
         systemBar.applyPalette(palette)
 
-        when (config.skin) {
-            Skin.CLASSIC -> buildClassic()
-            Skin.GRAPHITE -> buildGraphite()
-            Skin.TITANIUM -> buildTitanium()
+        when (config.layout) {
+            PadLayout.CLASSIC -> buildClassic()
+            PadLayout.GRAPHITE -> buildGraphite()
+            PadLayout.TITANIUM -> buildTitanium()
         }
         setMicrophoneState(microphoneState)
     }

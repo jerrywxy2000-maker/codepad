@@ -9,7 +9,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     private var window: NSWindow?
     private var apps: [PadAppSummary] = []
     private var appPopUps: [NSPopUpButton] = []
-    private let skinPopUp = NSPopUpButton(frame: .zero, pullsDown: false)
+    private let layoutPopUp = NSPopUpButton(frame: .zero, pullsDown: false)
+    private let themePopUp = NSPopUpButton(frame: .zero, pullsDown: false)
     private let mouseSlider = NSSlider(value: 1, minValue: 0.5, maxValue: 2, target: nil, action: nil)
     private let scrollSlider = NSSlider(value: 1, minValue: 0.5, maxValue: 4, target: nil, action: nil)
     private let mouseValue = NSTextField(labelWithString: "1.0x")
@@ -51,13 +52,21 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         content.edgeInsets = NSEdgeInsets(top: 20, left: 22, bottom: 20, right: 22)
 
         content.addArrangedSubview(sectionTitle("平板界面"))
-        skinPopUp.removeAllItems()
-        for skin in PadConfig.skins {
-            skinPopUp.addItem(withTitle: PadConfig.skinNames[skin] ?? skin)
+        layoutPopUp.removeAllItems()
+        for layout in PadConfig.layouts {
+            layoutPopUp.addItem(withTitle: PadConfig.layoutNames[layout] ?? layout)
         }
-        skinPopUp.target = self
-        skinPopUp.action = #selector(skinChanged)
-        content.addArrangedSubview(labeledRow("皮肤", skinPopUp))
+        layoutPopUp.target = self
+        layoutPopUp.action = #selector(layoutChanged)
+        content.addArrangedSubview(labeledRow("布局", layoutPopUp))
+
+        themePopUp.removeAllItems()
+        for theme in PadConfig.themes {
+            themePopUp.addItem(withTitle: PadConfig.themeNames[theme] ?? theme)
+        }
+        themePopUp.target = self
+        themePopUp.action = #selector(themeChanged)
+        content.addArrangedSubview(labeledRow("配色", themePopUp))
 
         content.addArrangedSubview(separator())
         content.addArrangedSubview(sectionTitle("常用 App"))
@@ -205,8 +214,11 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
         suppressActions = true
         defer { suppressActions = false }
 
-        if let index = PadConfig.skins.firstIndex(of: config.skin) {
-            skinPopUp.selectItem(at: index)
+        if let index = PadConfig.layouts.firstIndex(of: config.layout) {
+            layoutPopUp.selectItem(at: index)
+        }
+        if let index = PadConfig.themes.firstIndex(of: config.theme) {
+            themePopUp.selectItem(at: index)
         }
 
         for (index, popUp) in appPopUps.enumerated() {
@@ -252,11 +264,18 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
 
     // MARK: - 控件回调
 
-    @objc private func skinChanged() {
+    @objc private func layoutChanged() {
         guard !suppressActions else { return }
-        let index = skinPopUp.indexOfSelectedItem
-        guard PadConfig.skins.indices.contains(index) else { return }
-        store.update { $0.skin = PadConfig.skins[index] }
+        let index = layoutPopUp.indexOfSelectedItem
+        guard PadConfig.layouts.indices.contains(index) else { return }
+        store.update { $0.layout = PadConfig.layouts[index] }
+    }
+
+    @objc private func themeChanged() {
+        guard !suppressActions else { return }
+        let index = themePopUp.indexOfSelectedItem
+        guard PadConfig.themes.indices.contains(index) else { return }
+        store.update { $0.theme = PadConfig.themes[index] }
     }
 
     @objc private func appChanged(_ sender: NSPopUpButton) {

@@ -1,32 +1,76 @@
 package com.xiaoxi.vibepad.ui
 
 /**
- * 三套皮肤对应 designs/skins/ 下的 01 经典黑、02 深空专业、05 双手操控。
+ * 布局与配色是两个独立维度，可以自由组合：
+ *
+ * - [PadLayout] 决定控件排布（3 种，对应 designs/skins/ 下的 01 / 02 / 05）。
+ * - [SkinTheme] 只决定色板，新增一种配色只需在这里加一个枚举值和一份
+ *   [SkinPalette]，不必改动任何布局代码、协议或手势语义。
  *
  * 皮肤只改变视觉变量与布局，不改变网络协议、配对流程、手势语义和键位功能
  * （designs/README.md「优化时必须遵守的边界」）。原型里在本项目上无法真正操作的元素
  * （固定 Touch Bar 标签、亮度/音量滑杆、演示转写草稿、文字输入弹层）一律不实现：
  * 顶部一律走 Mac 真实 Touch Bar 画面回传。
  */
-enum class Skin(val id: String, val displayName: String, val summary: String) {
+enum class PadLayout(val id: String, val displayName: String, val summary: String) {
     CLASSIC("classic", "经典", "纯黑背景 · 左控制右触控"),
-    GRAPHITE("graphite", "深空专业", "深空灰 · 左触控右快捷键 · 底部 App Dock"),
-    TITANIUM("titanium", "双手操控", "暖钛浅色 · 中央触控 · 左右拇指分工");
-
-    val palette: SkinPalette
-        get() = when (this) {
-            CLASSIC -> SkinPalette.CLASSIC
-            GRAPHITE -> SkinPalette.GRAPHITE
-            TITANIUM -> SkinPalette.TITANIUM
-        }
+    GRAPHITE("graphite", "深空专业", "左触控右快捷键 · 底部 App Dock"),
+    TITANIUM("titanium", "双手操控", "中央触控 · 左右拇指分工");
 
     companion object {
-        fun fromId(id: String?): Skin = entries.firstOrNull { it.id == id } ?: CLASSIC
+        fun fromId(id: String?): PadLayout =
+            entries.firstOrNull { it.id == id } ?: CLASSIC
     }
 }
 
 /**
- * 皮肤色板与形状变量。取值来自 designs/orbit-source/design/tokens.json；
+ * 配色维度。[AUTO] 不是固定色板，而是按 Mac 当前系统外观（深色/浅色）解析成
+ * [SkinPalette.CLASSIC] 或 [SkinPalette.TITANIUM]——解析所需的状态由 Helper 心跳帧
+ * `0x21 PONG` 的 `appearance` 字段下发，属于运行时状态，不写进配置。
+ */
+enum class SkinTheme(val id: String, val displayName: String, val summary: String) {
+    CLASSIC("classic", "经典黑", "纯黑底 · 冷蓝强调"),
+    GRAPHITE("graphite", "深空灰", "深空灰 · 低饱和蓝灰"),
+    TITANIUM("titanium", "暖钛浅", "暖钛浅色 · 深棕强调"),
+    MIDNIGHT("midnight", "深夜蓝", "深蓝底 · 亮蓝强调"),
+    FOREST("forest", "墨绿", "深绿底 · 薄荷绿强调"),
+    VIOLET("violet", "暗紫", "深紫底 · 淡紫强调"),
+    AUTO("auto", "跟随 Mac", "按 Mac 系统外观自动切换明暗");
+
+    /** 固定配色的色板；[AUTO] 返回 null，需由 [SkinTheme.resolve] 结合外观解析。 */
+    val fixedPalette: SkinPalette?
+        get() = when (this) {
+            CLASSIC -> SkinPalette.CLASSIC
+            GRAPHITE -> SkinPalette.GRAPHITE
+            TITANIUM -> SkinPalette.TITANIUM
+            MIDNIGHT -> SkinPalette.MIDNIGHT
+            FOREST -> SkinPalette.FOREST
+            VIOLET -> SkinPalette.VIOLET
+            AUTO -> null
+        }
+
+    /**
+     * 解析出实际使用的色板。
+     *
+     * @param macAppearance Mac 当前系统外观：`"dark"` / `"light"`，未知时按深色处理。
+     */
+    fun resolve(macAppearance: String?): SkinPalette =
+        fixedPalette
+            ?: if (macAppearance == "light") SkinPalette.TITANIUM else SkinPalette.CLASSIC
+
+    companion object {
+        fun fromId(id: String?): SkinTheme = entries.firstOrNull { it.id == id } ?: CLASSIC
+
+        /**
+         * 兼容旧版本只传一个 `skin` 字段的场景：旧皮肤 id 本身就是「布局 + 配色」的
+         * 绑定值，因此直接映射为同名配色；识别不了的退回 [CLASSIC]。
+         */
+        fun fromLegacySkinId(id: String?): SkinTheme = fromId(id)
+    }
+}
+
+/**
+ * 配色与形状变量。取值来自 designs/orbit-source/design/tokens.json；
  * 经典黑沿用 0.4.1 已上线的实现值，改皮肤时不要改动它。
  */
 data class SkinPalette(
@@ -163,6 +207,97 @@ data class SkinPalette(
             padRadius = 21f,
             keyRadius = 11f,
             light = true,
+        )
+
+        /**
+         * 深夜蓝 Midnight：深靛底 + 亮蓝强调，长时间夜间使用比纯黑更少刺眼。
+         * 圆角与布局无关，沿用经典黑的 14/22/10。
+         */
+        val MIDNIGHT = SkinPalette(
+            background = 0xFF0A1020.toInt(),
+            panel = 0xFF141C30.toInt(),
+            key = 0xFF1B2440.toInt(),
+            keyPressed = 0xFF273156.toInt(),
+            outline = 0xFF2E3A5C.toInt(),
+            text = 0xFFE4E9F5.toInt(),
+            muted = 0xFF9AA6C4.toInt(),
+            icon = 0xFFA8B4D2.toInt(),
+            accent = 0xFF9CC0FF.toInt(),
+            accentSoft = 0xFF1D2B4A.toInt(),
+            accentStrong = 0xFF8FB6F5.toInt(),
+            accentPressed = 0xFF7BA2E4.toInt(),
+            onAccent = 0xFF0C1730.toInt(),
+            pad = 0xFF0A1020.toInt(),
+            padOutline = 0xFF2A3555.toInt(),
+            padOnline = 0xFF53B582.toInt(),
+            padLabel = 0xFF6E7A99.toInt(),
+            touchBar = 0xFF070C18.toInt(),
+            warning = 0xFFFFB4AB.toInt(),
+            recording = 0xFFFF4D6B.toInt(),
+            panelRadius = 14f,
+            padRadius = 22f,
+            keyRadius = 10f,
+            light = false,
+        )
+
+        /**
+         * 墨绿 Forest：深松绿底 + 薄荷绿强调，冷色系里最放松的一套。
+         */
+        val FOREST = SkinPalette(
+            background = 0xFF0A1512.toInt(),
+            panel = 0xFF12211C.toInt(),
+            key = 0xFF172A23.toInt(),
+            keyPressed = 0xFF21392F.toInt(),
+            outline = 0xFF274038.toInt(),
+            text = 0xFFE2EDE8.toInt(),
+            muted = 0xFF95AFA5.toInt(),
+            icon = 0xFFA3BDB2.toInt(),
+            accent = 0xFF86E0BC.toInt(),
+            accentSoft = 0xFF173328.toInt(),
+            accentStrong = 0xFF74D6B1.toInt(),
+            accentPressed = 0xFF62C39F.toInt(),
+            onAccent = 0xFF07211A.toInt(),
+            pad = 0xFF0A1512.toInt(),
+            padOutline = 0xFF284039.toInt(),
+            padOnline = 0xFF53B582.toInt(),
+            padLabel = 0xFF648073.toInt(),
+            touchBar = 0xFF070F0D.toInt(),
+            warning = 0xFFFFB4AB.toInt(),
+            recording = 0xFFFF4D6B.toInt(),
+            panelRadius = 14f,
+            padRadius = 22f,
+            keyRadius = 10f,
+            light = false,
+        )
+
+        /**
+         * 暗紫 Violet：深紫底 + 淡紫强调。
+         */
+        val VIOLET = SkinPalette(
+            background = 0xFF120D1E.toInt(),
+            panel = 0xFF1C152C.toInt(),
+            key = 0xFF241B38.toInt(),
+            keyPressed = 0xFF31254A.toInt(),
+            outline = 0xFF392D52.toInt(),
+            text = 0xFFEAE4F5.toInt(),
+            muted = 0xFFA99CC4.toInt(),
+            icon = 0xFFB4A7CE.toInt(),
+            accent = 0xFFC6B0FF.toInt(),
+            accentSoft = 0xFF2A2148.toInt(),
+            accentStrong = 0xFFB9A2F7.toInt(),
+            accentPressed = 0xFFA78EEA.toInt(),
+            onAccent = 0xFF170F2E.toInt(),
+            pad = 0xFF120D1E.toInt(),
+            padOutline = 0xFF382D51.toInt(),
+            padOnline = 0xFF53B582.toInt(),
+            padLabel = 0xFF786D95.toInt(),
+            touchBar = 0xFF0D0917.toInt(),
+            warning = 0xFFFFB4AB.toInt(),
+            recording = 0xFFFF4D6B.toInt(),
+            panelRadius = 14f,
+            padRadius = 22f,
+            keyRadius = 10f,
+            light = false,
         )
     }
 }

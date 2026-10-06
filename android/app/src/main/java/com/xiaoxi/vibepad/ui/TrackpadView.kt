@@ -31,7 +31,7 @@ class TrackpadView(
     private val longPressTimeout = ViewConfiguration.getLongPressTimeout().toLong()
     private val tapTimeout = ViewConfiguration.getTapTimeout().toLong() + 80L
 
-    private var palette = Skin.CLASSIC.palette
+    private var palette = SkinPalette.CLASSIC
     private var mode = Mode.IDLE
     private var twoFingerIntent = TwoFingerIntent.UNDECIDED
     private var downAt = 0L

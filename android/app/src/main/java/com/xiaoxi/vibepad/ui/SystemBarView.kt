@@ -46,7 +46,7 @@ class SystemBarView(
     private val accessPoint = ImageView(context)
     private val battery = BatteryStatusView(context)
     private val settingsButton = ImageButton(context)
-    private var palette = Skin.CLASSIC.palette
+    private var palette = SkinPalette.CLASSIC
     private var networkConnected = false
     private var helperUsable = false
 

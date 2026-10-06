@@ -604,6 +604,7 @@ class WifiInputSink(
                 mouseButtons = json.optInt("mouseButtons", 0),
                 modifiers = json.optInt("modifiers", 0),
                 frontmostApp = json.optString("frontmostApp").takeIf(String::isNotBlank),
+                macAppearance = json.optString("appearance").takeIf(String::isNotBlank),
             ))
         } catch (error: Exception) {
             Log.w(TAG, "Invalid helper health payload", error)

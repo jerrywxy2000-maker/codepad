@@ -40,7 +40,7 @@ class TouchBarStripView(
     private val decodeScheduled = AtomicBoolean(false)
     private val receivedSequence = AtomicLong(0L)
     private var displayedSequence = 0L
-    private var palette = Skin.CLASSIC.palette
+    private var palette = SkinPalette.CLASSIC
     private var cornerRadiusDp = 0f
     private var subscribedSink: WifiInputSink? = null
 

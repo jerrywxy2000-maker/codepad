@@ -9,12 +9,15 @@ import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
+import android.widget.ArrayAdapter
+import android.widget.AdapterView
 import android.widget.LinearLayout
 import android.widget.Button
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.ScrollView
 import android.widget.SeekBar
+import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import com.xiaoxi.vibepad.input.InputSink
@@ -28,7 +31,8 @@ import com.xiaoxi.vibepad.input.WifiInputSink
 import com.xiaoxi.vibepad.ui.NoOpInputSink
 import com.xiaoxi.vibepad.ui.PadConfig
 import com.xiaoxi.vibepad.ui.PadConfigStore
-import com.xiaoxi.vibepad.ui.Skin
+import com.xiaoxi.vibepad.ui.PadLayout
+import com.xiaoxi.vibepad.ui.SkinTheme
 import com.xiaoxi.vibepad.ui.VibePadView
 import com.xiaoxi.vibepad.system.KioskController
 
@@ -302,7 +306,7 @@ class MainActivity : Activity() {
             }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(42)).apply {
                 bottomMargin = dp(4)
             })
-            addView(skinControl(config.skin))
+            addView(appearanceControl(config))
             addView(Button(this@MainActivity).apply {
                 isAllCaps = false
                 text = "选择常用 App"
@@ -358,47 +362,99 @@ class MainActivity : Activity() {
         dialog.show()
     }
 
-    /** 皮肤切换：三套皮肤共用同一套协议与手势，只改布局与配色。 */
-    private fun skinControl(current: Skin): View {
+    /**
+     * 外观切换：布局与配色两个独立维度。
+     *
+     * 布局只有 3 个、用横向单选；配色有 7 个且会继续增加，横向单选会挤爆，
+     * 因此用下拉框。
+     */
+    private fun appearanceControl(current: PadConfig): View {
         val density = resources.displayMetrics.density
         fun dp(value: Int) = (value * density + 0.5f).toInt()
-        val summary = TextView(this).apply {
-            text = current.summary
+
+        val layoutSummary = TextView(this).apply {
+            text = current.layout.summary
             textSize = 11f
             alpha = 0.65f
         }
-        val group = RadioGroup(this).apply {
+        val layoutGroup = RadioGroup(this).apply {
             orientation = RadioGroup.HORIZONTAL
-            Skin.entries.forEachIndexed { index, skin ->
+            PadLayout.entries.forEachIndexed { index, layout ->
                 addView(RadioButton(this@MainActivity).apply {
-                    id = SKIN_BUTTON_BASE_ID + index
-                    text = skin.displayName
+                    id = LAYOUT_BUTTON_BASE_ID + index
+                    text = layout.displayName
                     textSize = 14f
-                    isChecked = skin == current
+                    isChecked = layout == current.layout
                 }, RadioGroup.LayoutParams(0, RadioGroup.LayoutParams.WRAP_CONTENT, 1f))
             }
             setOnCheckedChangeListener { _, checkedId ->
-                val skin = Skin.entries.getOrNull(checkedId - SKIN_BUTTON_BASE_ID) ?: return@setOnCheckedChangeListener
-                summary.text = skin.summary
-                configStore.update { it.copy(skin = skin) }
+                val layout = PadLayout.entries.getOrNull(checkedId - LAYOUT_BUTTON_BASE_ID)
+                    ?: return@setOnCheckedChangeListener
+                layoutSummary.text = layout.summary
+                configStore.update { it.copy(layout = layout) }
             }
         }
+
+        val themeSummary = TextView(this).apply {
+            text = themeSummaryText(current.theme)
+            textSize = 11f
+            alpha = 0.65f
+        }
+        val themeSpinner = Spinner(this).apply {
+            adapter = ArrayAdapter(
+                this@MainActivity,
+                android.R.layout.simple_spinner_dropdown_item,
+                SkinTheme.entries.map { it.displayName },
+            )
+            setSelection(SkinTheme.entries.indexOf(current.theme).coerceAtLeast(0))
+            onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(
+                    parent: AdapterView<*>?, view: View?, position: Int, id: Long,
+                ) {
+                    val theme = SkinTheme.entries.getOrNull(position) ?: return
+                    themeSummary.text = themeSummaryText(theme)
+                    configStore.update { it.copy(theme = theme) }
+                }
+
+                override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+            }
+        }
+
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(0, dp(6), 0, dp(2))
             addView(TextView(this@MainActivity).apply {
-                text = "界面皮肤"
+                text = "界面布局"
                 textSize = 15f
             }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(24)))
-            addView(group, LinearLayout.LayoutParams(
+            addView(layoutGroup, LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
             ))
-            addView(summary, LinearLayout.LayoutParams(
+            addView(layoutSummary, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ))
+            addView(TextView(this@MainActivity).apply {
+                text = "配色"
+                textSize = 15f
+                setPadding(0, dp(10), 0, 0)
+            }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(24)))
+            addView(themeSpinner, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ))
+            addView(themeSummary, LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
             ))
         }
+    }
+
+    /** 「跟随 Mac」要额外说明它跟着谁变，其余直接用枚举自带的说明。 */
+    private fun themeSummaryText(theme: SkinTheme): String = when (theme) {
+        SkinTheme.AUTO -> "${theme.summary}（Mac 切深/浅色时自动跟随）"
+        else -> theme.summary
     }
 
     private fun showPairingInstructions(message: String) {
@@ -532,7 +588,7 @@ class MainActivity : Activity() {
 
     private companion object {
         const val REQUEST_RECORD_AUDIO = 4101
-        const val SKIN_BUTTON_BASE_ID = 0x5B1000
+        const val LAYOUT_BUTTON_BASE_ID = 0x5B1000
         const val TYPELESS_START_DELAY_MS = 120L
         const val TYPELESS_TAP_MS = 90L
         const val DIALOG_IMMERSIVE_FLAGS =

@@ -63,7 +63,8 @@ HID Keyboard/Keypad usage；helper 负责将其映射为 macOS virtual keycode�
 
 菜单栏图标里新增「VibePad 设置…」，可以直接在 Mac 上配置平板界面，不必只在平板上改：
 
-- 界面皮肤：经典 / 深空专业 / 双手操控（对应 `designs/skins/` 的 01 / 02 / 05）；
+- 布局：经典 / 深空专业 / 双手操控（对应 `designs/skins/` 的 01 / 02 / 05）；
+- 配色：经典黑 / 深空灰 / 暖钛浅 / 深夜蓝 / 墨绿 / 暗紫 / 跟随 Mac；
 - 常用 App：3 × 3 下拉框，顺序即平板显示顺序，可留空；
 - 鼠标与滚动灵敏度。
 
