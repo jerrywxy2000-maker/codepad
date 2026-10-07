@@ -7,6 +7,7 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
+import android.content.res.Configuration
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
@@ -57,6 +58,8 @@ class CodePadView(
 ) : LinearLayout(context) {
 
     private val density = resources.displayMetrics.density
+    private val isPortrait get() =
+        resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
     private val handler = Handler(Looper.getMainLooper())
     private val store = PadConfigStore.get(context)
     private val appCatalog = mutableListOf<RemoteApp>()
@@ -87,6 +90,12 @@ class CodePadView(
     init {
         orientation = VERTICAL
         buildLayout()
+    }
+
+    /** 旋转时重建布局，无需重启 Activity（Manifest 已声明 orientation configChange）。 */
+    override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
+        if (w != ow || h != oh) rebuildBody()
+        super.onSizeChanged(w, h, ow, oh)
     }
 
     // region 外部接口
@@ -223,9 +232,9 @@ class CodePadView(
         systemBar.applyPalette(palette)
 
         when (config.layout) {
-            PadLayout.CLASSIC -> buildClassic()
-            PadLayout.GRAPHITE -> buildGraphite()
-            PadLayout.TITANIUM -> buildTitanium()
+            PadLayout.CLASSIC -> if (isPortrait) buildClassicPortrait() else buildClassic()
+            PadLayout.GRAPHITE -> if (isPortrait) buildGraphitePortrait() else buildGraphite()
+            PadLayout.TITANIUM -> if (isPortrait) buildTitaniumPortrait() else buildTitanium()
         }
         setMicrophoneState(microphoneState)
     }
@@ -289,6 +298,52 @@ class CodePadView(
                 LayoutParams(dp(212), MATCH_PARENT).apply { marginStart = dp(12) })
         }, LayoutParams(MATCH_PARENT, 0, 1f))
     }
+
+    // endregion
+
+    // region 竖屏适配（手机）：触控板占上方，控制面板堆在下方
+
+    /** 经典黑竖屏：顶行 → 触控板（上 60%）→ 控制面板（下 40%）。 */
+    private fun buildClassicPortrait() {
+        addView(buildHeaderRow(), LayoutParams(MATCH_PARENT, dp(34)))
+        addView(trackpad, LayoutParams(MATCH_PARENT, 0, 3f).apply {
+            bottomMargin = dp(8)
+        })
+        addView(buildClassicControlPanel(), LayoutParams(MATCH_PARENT, 0, 2f))
+    }
+
+    /** 深空专业竖屏：顶行 → 触控板（上 60%）→ 底部 Dock。 */
+    private fun buildGraphitePortrait() {
+        addView(buildHeaderRow(), LayoutParams(MATCH_PARENT, dp(34)))
+        addView(trackpad, LayoutParams(MATCH_PARENT, 0, 3f).apply {
+            bottomMargin = dp(11)
+        })
+        addView(buildAppDock(), LayoutParams(MATCH_PARENT, dp(80)).apply {
+            marginStart = dp(16)
+            marginEnd = dp(16)
+            topMargin = dp(11)
+            bottomMargin = dp(14)
+        })
+    }
+
+    /** 双手操控竖屏：顶行 → 触控板（上 60%）→ 左/右面板并排（下 40%）。 */
+    private fun buildTitaniumPortrait() {
+        addView(buildHeaderRow(), LayoutParams(MATCH_PARENT, dp(34)))
+        addView(trackpad, LayoutParams(MATCH_PARENT, 0, 3f).apply {
+            bottomMargin = dp(12)
+        })
+        addView(LinearLayout(context).apply {
+            orientation = HORIZONTAL
+            setPadding(dp(15), dp(12), dp(15), dp(16))
+            addView(buildTitaniumLeftPanel(), LayoutParams(0, MATCH_PARENT, 1f).apply {
+                marginEnd = dp(6)
+            })
+            addView(buildCommandsPanel(columns = 3, keyHeight = 52, stackedVoice = true),
+                LayoutParams(0, MATCH_PARENT, 1f).apply { marginStart = dp(6) })
+        }, LayoutParams(MATCH_PARENT, 0, 2f))
+    }
+
+    // endregion
 
     private fun buildClassicControlPanel(): View = LinearLayout(context).apply {
         orientation = VERTICAL
