@@ -1,6 +1,6 @@
 # CodePad Android
 
-横屏平板端 App（Kotlin 原生 View，无 WebView，包名 `com.xiaoxi.codepad`，
+平板 / 手机端 App（Kotlin 原生 View，无 WebView，包名 `com.xiaoxi.codepad`，
 minSdk 28）。通过 Bonjour 发现 CodePad Mac Helper，建立认证 TCP 连接后提供：
 
 - 右侧触控板：单指移动 / 轻点 / 长按拖动，双指自然滚动、惯性、轻点右键、捏合缩放，
@@ -10,6 +10,14 @@ minSdk 28）。通过 Bonjour 发现 CodePad Mac Helper，建立认证 TCP 连�
 - 顶栏实时 Touch Bar 画面回传与触摸转发；
 - 传输、配对与认证（`input/WifiInputSink.kt`、`input/PairingSecurity.kt`），
   配对密钥保存在 Android Keystore。
+
+### 传输通道：USB 优先，Wi-Fi 兜底
+
+`WifiInputSink` 每个重连周期先探测 loopback `127.0.0.1:39876`（USB 通道）：
+Mac 上执行 `scripts/usb-bridge.sh` 建立 `adb reverse tcp:39876 tcp:39876` 后，
+输入流走 USB 数据线，状态栏显示「USB 数据线」；未建立转发时 loopback 被内核
+瞬间拒绝（约 0 ms），自动退回 Bonjour 解析出的 Wi-Fi 端点，两条路径共用
+同一套帧协议与配对认证，`Endpoint.usb` 只影响连接优先级与状态文案。
 
 在设置弹层切换布局（`classic` 经典 / `graphite` 深空专业 / `titanium` 双手操控）与配色
 （`classic`/`graphite`/`titanium`/`midnight` 深夜蓝/`forest` 墨绿/`violet` 暗紫/`auto` 跟随 Mac），

@@ -26,8 +26,15 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Low-latency LAN input transport. A Mac helper advertises [_codepad._tcp.] with Bonjour;
+ * Low-latency input transport. A Mac helper advertises [_codepad._tcp.] with Bonjour;
  * CodePad discovers it, opens a TCP_NODELAY socket, and sends compact ordered binary frames.
+ *
+ * Two physical paths feed the same protocol:
+ *  - **USB**: when `adb reverse tcp:39876 tcp:39876` is active on the Mac, connecting to
+ *    loopback 127.0.0.1:39876 tunnels through the data cable. The probe is attempted first
+ *    on every reconnect tick; without the forward the kernel refuses it instantly (~0 ms),
+ *    so a Wi-Fi-only setup pays nothing.
+ *  - **Wi-Fi**: Bonjour discovery resolves the helper's LAN address as before.
  */
 class WifiInputSink(
     context: Context,
@@ -47,7 +54,13 @@ class WifiInputSink(
         CONNECTED, DISCONNECTED, ERROR, CLOSED
     }
 
-    private data class Endpoint(val address: InetAddress, val port: Int, val name: String)
+    private data class Endpoint(
+        val address: InetAddress,
+        val port: Int,
+        val name: String,
+        /** True for the adb reverse loopback path; drives status wording and connect priority. */
+        val usb: Boolean = false,
+    )
     private data class Event(val type: Int, val payload: ByteArray)
     private data class TouchBarFrameAssembly(
         val frameId: Long,
@@ -79,7 +92,11 @@ class WifiInputSink(
     @Volatile private var transportConnected = false
     @Volatile private var socket: Socket? = null
     @Volatile private var output: DataOutputStream? = null
-    @Volatile private var lastEndpoint: Endpoint? = null
+    /** Bonjour-resolved Wi-Fi endpoint (the USB loopback endpoint is a constant, never stored here). */
+    @Volatile private var wifiEndpoint: Endpoint? = null
+    /** Reflects the transport of the most recent successful connect; survives a drop so
+     *  disconnect messages can say which cable went away. */
+    @Volatile private var activeUsb = false
     @Volatile private var resolving = false
     @Volatile private var serverNonce: ByteArray? = null
     @Volatile private var touchBarSubscribed = false
@@ -103,6 +120,14 @@ class WifiInputSink(
     override val isConnected: Boolean get() = connected && !closed
     /** True only while the stored pairing secret is still accepted by the Mac. */
     val isPaired: Boolean get() = pairingStore.hasSecret && !secretRejectedByMac
+    /** True when the live session runs over the USB cable (adb reverse), not Wi-Fi. */
+    val isUsbTransport: Boolean get() = activeUsb
+
+    /** Loopback endpoint exposed by `adb reverse tcp:39876 tcp:39876` on the Mac.
+     *  A literal address, so resolving it never touches DNS. */
+    private val usbEndpoint: Endpoint by lazy {
+        Endpoint(InetAddress.getByName("127.0.0.1"), USB_PORT, "USB", usb = true)
+    }
 
     private val discoveryListener = object : NsdManager.DiscoveryListener {
         override fun onDiscoveryStarted(serviceType: String) = publish(Status.DISCOVERING, "正在查找 Mac")
@@ -121,7 +146,7 @@ class WifiInputSink(
                         resolving = false
                         val host = serviceInfo.host ?: return
                         val endpoint = Endpoint(host, serviceInfo.port, serviceInfo.serviceName)
-                        lastEndpoint = endpoint
+                        wifiEndpoint = endpoint
                         connect(endpoint)
                     }
                 })
@@ -132,7 +157,7 @@ class WifiInputSink(
         }
 
         override fun onServiceLost(service: NsdServiceInfo) {
-            if (service.serviceName == lastEndpoint?.name && !transportConnected) publish(Status.DISCONNECTED, "Mac 服务已离线")
+            if (service.serviceName == wifiEndpoint?.name && !transportConnected) publish(Status.DISCONNECTED, "Mac 服务已离线")
         }
 
         override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) {
@@ -150,8 +175,19 @@ class WifiInputSink(
         acquireMulticastLock()
         startDiscovery()
         io.scheduleAtFixedRate({
-            if (connected) enqueue(Event(TYPE_PING, longPayload(SystemClock.elapsedRealtime())))
-            else if (!transportConnected) lastEndpoint?.let(::connect)
+            if (connected) {
+                enqueue(Event(TYPE_PING, longPayload(SystemClock.elapsedRealtime())))
+            } else if (!transportConnected && connectInFlight.compareAndSet(false, true)) {
+                try {
+                    // USB 数据线（adb reverse）优先：未插线或未建立转发时 loopback 会被
+                    // 内核立即拒绝，随后马上退回 Bonjour 解析出的 Wi-Fi 端点。
+                    if (!attemptConnect(usbEndpoint, quiet = true)) {
+                        wifiEndpoint?.let { attemptConnect(it) }
+                    }
+                } finally {
+                    connectInFlight.set(false)
+                }
+            }
         }, HEARTBEAT_INTERVAL_MS, HEARTBEAT_INTERVAL_MS, TimeUnit.MILLISECONDS)
     }
 
@@ -361,35 +397,51 @@ class WifiInputSink(
 
     private fun connect(endpoint: Endpoint) {
         if (closed || transportConnected || !connectInFlight.compareAndSet(false, true)) return
-        publish(Status.CONNECTING, "正在连接 ${endpoint.name}")
         io.execute {
             try {
-                val candidate = Socket()
-                candidate.tcpNoDelay = true
-                candidate.keepAlive = true
-                candidate.sendBufferSize = 16 * 1024
-                candidate.connect(InetSocketAddress(endpoint.address, endpoint.port), CONNECT_TIMEOUT_MS)
-                if (closed) {
-                    candidate.close()
-                    return@execute
-                }
-                synchronized(stateLock) {
-                    closeSocket()
-                    socket = candidate
-                    output = DataOutputStream(candidate.getOutputStream())
-                    sequence = 1
-                    transportConnected = true
-                }
-                synchronized(queueLock) { queue.clear() }
-                publish(Status.AUTHENTICATING, "正在安全认证")
-                startReader(candidate)
-            } catch (error: Exception) {
-                Log.w(TAG, "Mac helper connection failed", error)
-                synchronized(stateLock) { closeSocket() }
-                publish(Status.DISCONNECTED, "等待 Mac Wi-Fi 服务")
+                attemptConnect(endpoint)
             } finally {
                 connectInFlight.set(false)
             }
+        }
+    }
+
+    /**
+     * 必须在 [io] 线程上执行，且由调用方持有 [connectInFlight]。
+     * 返回 true 表示传输层已建立（认证由读线程接管）。
+     * [quiet] 用于 USB 探测：没有 adb reverse 时连接瞬间被拒，静默失败，
+     * 以免状态栏在「正在查找 Mac / 正在连接 USB / 等待服务」之间反复跳动。
+     */
+    private fun attemptConnect(endpoint: Endpoint, quiet: Boolean = false): Boolean {
+        if (closed || transportConnected) return true
+        if (!quiet) publish(Status.CONNECTING, "正在连接 ${endpoint.name}")
+        return try {
+            val candidate = Socket()
+            candidate.tcpNoDelay = true
+            candidate.keepAlive = true
+            candidate.sendBufferSize = 16 * 1024
+            candidate.connect(InetSocketAddress(endpoint.address, endpoint.port), CONNECT_TIMEOUT_MS)
+            if (closed) {
+                candidate.close()
+                return false
+            }
+            synchronized(stateLock) {
+                closeSocket()
+                socket = candidate
+                output = DataOutputStream(candidate.getOutputStream())
+                sequence = 1
+                transportConnected = true
+            }
+            synchronized(queueLock) { queue.clear() }
+            activeUsb = endpoint.usb
+            publish(Status.AUTHENTICATING, "正在安全认证")
+            startReader(candidate)
+            true
+        } catch (error: Exception) {
+            Log.w(TAG, "Mac helper connection failed (${endpoint.name})", error)
+            synchronized(stateLock) { closeSocket() }
+            if (!quiet) publish(Status.DISCONNECTED, "等待 Mac Wi-Fi 服务")
+            false
         }
     }
 
@@ -504,7 +556,8 @@ class WifiInputSink(
         if (connected) return
         connected = true
         acquireHighPerformanceLock()
-        publish(Status.CONNECTED, "5GHz Wi-Fi · ${lastEndpoint?.name ?: "Mac"}")
+        val host = wifiEndpoint?.name ?: "Mac"
+        publish(Status.CONNECTED, if (activeUsb) "USB 数据线 · $host" else "5GHz Wi-Fi · $host")
         enqueue(Event(
             TYPE_TOUCH_BAR_SUBSCRIBE,
             byteArrayOf(if (touchBarSubscribed) 1 else 0),
@@ -790,9 +843,11 @@ class WifiInputSink(
         }
         synchronized(queueLock) { queue.clear() }
         if (closed) return
-        publish(Status.DISCONNECTED, "Wi-Fi 已断开，正在重连")
+        publish(Status.DISCONNECTED, if (activeUsb) "USB 已断开，正在重连" else "Wi-Fi 已断开，正在重连")
         audioDisconnectListener()
-        val endpoint = lastEndpoint ?: return
+        // USB 会话断开时 wifiEndpoint 可能为空（从未发现 Bonjour 服务），此时交给
+        // 心跳继续探测 loopback；Wi-Fi 端点在则按原节奏定向重连。
+        val endpoint = wifiEndpoint ?: return
         try {
             io.schedule({ connect(endpoint) }, RECONNECT_SECONDS, TimeUnit.SECONDS)
         } catch (_: RejectedExecutionException) {
@@ -924,5 +979,7 @@ class WifiInputSink(
         private const val NONCE_BYTES = 32
         private const val HMAC_BYTES = 32
         private const val CODE_PAIRING_REQUIRED = "PAIRING_REQUIRED"
+        /** 必须与 Mac helper 的 Wire.port（默认 39876）一致；adb reverse 也转发到此端口。 */
+        private const val USB_PORT = 39_876
     }
 }

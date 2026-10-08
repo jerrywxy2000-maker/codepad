@@ -84,11 +84,33 @@ Android SDK），按提示装好再跑一次即可。
 - **切换布局 / 配色 / 改灵敏度 / 设置常用 App**：平板点齿轮，或在 Mac 菜单栏
   「CodePad 设置…」里改，两端自动同步。
 
+### 可选：USB 数据线连接（延迟更低、不依赖 WiFi）
+
+默认走 WiFi（Bonjour 自动发现）。插着 USB 线时，也可以让输入流走数据线：
+
+1. 平板打开「开发者选项 → USB 调试」，插线后在平板上允许本机调试；
+2. Mac 上执行：
+
+   ```bash
+   scripts/usb-bridge.sh
+   ```
+
+脚本用 `adb reverse` 把平板的 `127.0.0.1:39876` 转发到 Mac 的 `39876`。
+平板端 App 每次重连都会**优先探测这条通道**，状态栏显示「**USB 数据线**」
+即已生效；未建立转发时 loopback 会被系统瞬间拒绝并自动退回 WiFi，
+所以不跑脚本也完全不影响正常使用。其它子命令：
+
+```bash
+scripts/usb-bridge.sh status   # 查看当前转发
+scripts/usb-bridge.sh down     # 移除转发
+```
+
 ### 常见问题
 
 | 症状 | 解决办法 |
 | --- | --- |
 | 平板一直「正在查找 Mac」 | 确认两台设备在同一个 WiFi；在 Mac 菜单栏重启 Helper |
+| WiFi 不稳 / 延迟高 | 插 USB 线，在 Mac 上执行 `scripts/usb-bridge.sh`，状态栏变「USB 数据线」即生效 |
 | 平板显示已连接但 Mac 没反应 | 辅助功能授权丢了：系统设置里重新打开 CodePad Helper 的开关 |
 | 「按住说话」没反应 | Mac 菜单栏「CodePad 设置… → 麦克风驱动」里点「安装驱动…」；不用此功能可忽略 |
 | 想卸载 | 先在「CodePad 设置… → 麦克风驱动」里点「卸载」，再删除 `~/Applications/CodePad Helper.app` 和 `~/Library/LaunchAgents/com.xiaoxi.codepad.mac-helper.plist`；平板上正常卸载 App |

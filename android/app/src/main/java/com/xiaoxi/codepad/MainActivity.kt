@@ -165,7 +165,8 @@ class MainActivity : Activity() {
                 wifiSink?.requestApps()
                 // 握手：把本地配置发给 Mac，由 revision 决定谁覆盖谁。
                 wifiSink?.requestPadConfig(configStore.encodeCurrent())
-                Toast.makeText(this, "已切换到 5GHz Wi-Fi", Toast.LENGTH_SHORT).show()
+                val via = if (wifiSink?.isUsbTransport == true) "USB 数据线" else "5GHz Wi-Fi"
+                Toast.makeText(this, "已连接 $via", Toast.LENGTH_SHORT).show()
             } else {
                 vibePadView?.clearModifierLocks()
                 if (microphoneStreamer?.isRecording == true || typelessSessionStarted) {
@@ -290,7 +291,8 @@ class MainActivity : Activity() {
             setPadding(dp(24), dp(4), dp(24), dp(8))
             addView(TextView(this@MainActivity).apply {
                 text = when {
-                    wifiSink?.isConnected == true -> "已连接"
+                    wifiSink?.isConnected == true ->
+                        if (wifiSink?.isUsbTransport == true) "已连接 · USB 数据线" else "已连接 · 5GHz Wi-Fi"
                     wifiSink?.isPaired == true -> "正在建立安全连接"
                     else -> "等待安全配对"
                 }
